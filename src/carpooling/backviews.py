@@ -1,7 +1,7 @@
 # Create your views here.
 from __future__ import print_function
 from carpooling.views import is_utente_carpooling
-from models import *
+from .models import *
 from django.db import models, connections, transaction
 from servizi.utils import dict_cursor, project, datetime2mysql, group_required
 from datetime import datetime, timedelta, time, date
@@ -13,7 +13,7 @@ try:
 	import cPickle as pickle
 except ImportError:  # Python 3
 	import pickle
-import views
+from . import views
 from pprint import pprint
 
 

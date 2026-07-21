@@ -19,7 +19,7 @@
 #    Roma mobile. If not, see http://www.gnu.org/licenses/.
 #
 
-from gtfs_pb2 import TripUpdate, FeedHeader, FeedMessage
+from .gtfs_pb2 import TripUpdate, FeedHeader, FeedMessage
 from datetime import date, time, datetime, timedelta
 from servizi.utils import datetime2unixtime
 

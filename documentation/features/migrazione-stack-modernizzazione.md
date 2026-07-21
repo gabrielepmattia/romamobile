@@ -110,6 +110,10 @@ stack attuale (Py2/Django1.5).
   - [x] literal `long` (`123L`) e `TabError` (mix tab/spazi)
 - [x] Normalizzare `cPickle`→`pickle`, `Queue`→`queue` (via `try/except ImportError`,
       senza introdurre dipendenze nuove: nessun rebuild immagine richiesto).
+- [x] Import relativi impliciti → espliciti (`import views` → `from . import views`)
+      nei `.py` dei package applicativi. Restano da fare i `.pyx` (insieme alla
+      ricompilazione Cython) e i moduli top-level di `src/`, che sono caricati come
+      top-level e quindi devono restare assoluti.
 - [ ] Affrontare a mano i punti str/bytes/`unicode` e i `cmp=` (→ `key=`).
 - [ ] Ricompilare le estensioni `.pyx` con Cython moderno; correggere le differenze
       di tipizzazione emerse.
@@ -233,6 +237,46 @@ test manuali) è a carico dell'ambiente di deploy dopo ogni batch.
     più errori di *sintassi* Py3 (restano quelli semantici: `unicode`, str/bytes,
     import impliciti, Django 1.5).
   - ✅ Validato in deploy (`hetzner-4gb-1`, 2026-07-21): vedi sotto.
+
+- **Bugfix — `/metro` mostrava `None` al posto dei nomi delle linee.** Il feed GTFS
+  non valorizza più `route_long_name` (è vuoto per **tutte** le route), quindi
+  `Percorso.descrizione` è `NULL`: in produzione 8/8 metro, 17/17 tram, 970/1113 bus.
+  Il fallback che esisteva già per le ferrovie concesse è stato fattorizzato in
+  `linee_da_percorsi()` e ora copre anche le metro (`MEA` → "Metro A", …).
+  Effetto collaterale utile: la chiave di ordinamento non è più `None`, che su
+  Python 3 sarebbe un `TypeError`.
+  - Il feed ha anche perso del tutto le `route_type=2`: non esiste più nessuna
+    ferrovia concessa, quindi la sezione viene nascosta se vuota invece di mostrare
+    un titolo spoglio. _(commit separato, non parte della migrazione.)_
+- **Fase 0 · primo mattone — `scripts/check_imports.py`.** Importa ogni modulo del
+  backend con i settings Django caricati: è l'unico modo di intercettare un import
+  rotto, che `compileall` non vede. Ogni modulo viene importato in un **fork**
+  dedicato, altrimenti si ottengono falsi positivi (`paline.gtfs_pb2` e
+  `google.transit.gtfs_realtime_pb2` registrano lo stesso `.proto` nel descriptor
+  pool e la seconda import esplode). Va eseguito con `/app` **scrivibile**: il
+  `LOGGING` di Django apre `/app/atacmobile.log` in append.
+- **Fase 1 · batch 3 — import relativi impliciti → espliciti.** 116 righe in 75 file:
+  `import views` → `from . import views` (33), `from models import *` →
+  `from .models import *` (29), più i moduli interni di `paline` (`grafo`, `tratto`,
+  `geomath`, `tomtom`, …). Su Py2 la forma esplicita è supportata da 2.6, quindi il
+  comportamento non cambia; su Py3 è l'unica che funziona.
+  - **Esclusi di proposito:** i moduli top-level di `src/` (`urls`, `settings`,
+    `xmlrpchandler`, …). Sono caricati *come* top-level (`DJANGO_SETTINGS_MODULE`,
+    `ROOT_URLCONF`), quindi un `from . import` li romperebbe: per loro l'import
+    assoluto è già corretto anche su Py3.
+  - **Restano da fare i `.pyx`** (`grafo.pyx: import tratto`, `geocoder.pyx: from
+    tomtom import …`, `bt/*.pyx: from cwalker import …`): vanno insieme alla
+    ricompilazione con Cython moderno, dove il `language_level` cambia la semantica
+    degli import.
+  - Attenzione a un caso che ha morso: in `dbf.py` l'import era dentro uno statement
+    composto su una riga (`try: import binnum`), e una riscrittura riga-per-riga
+    ingenua cancella il `try:`.
+  - **Verifica:** `compileall` pulito su Py2.7 e Py3.11; ogni import relativo risolve
+    a un file esistente (127 controllati); `check_imports.py` nel container di
+    produzione dà **201 moduli, 4 falliti** — *identici* ai 4 della baseline
+    (`paline.carpoolinggraph`, `paline.osm`, `paline.raggiungibilita`,
+    `paline.management.commands.romatpl_decoder`, tutti già rotti prima e da
+    guardare a parte).
 
 ### Validazione deploy 2026-07-21 (`hetzner-4gb-1`)
 

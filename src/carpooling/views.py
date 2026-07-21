@@ -20,7 +20,7 @@
 #
 
 from __future__ import print_function
-from models import *
+from .models import *
 from datetime import date, time, datetime, timedelta
 from django import forms
 from django.db.models import Q

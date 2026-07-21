@@ -20,7 +20,7 @@
 #
 
 from __future__ import print_function
-from grafo import DijkstraPool
+from .grafo import DijkstraPool
 import datetime
 
 def test_raggiungibilita(g, s_id):

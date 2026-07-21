@@ -1,7 +1,7 @@
 import pyximport; pyximport.install()
-from geocoder import SegmentGeocoder
+from .geocoder import SegmentGeocoder
 from servizi.utils import memoized, MinMaxValueData
-import geomath
+from . import geomath
 
 class SplittableLinestring(object):
 	"""

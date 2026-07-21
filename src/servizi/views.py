@@ -19,14 +19,14 @@
 #    Roma mobile. If not, see http://www.gnu.org/licenses/.
 #
 
-from models import *
+from .models import *
 from django.db import models, connections, transaction
 from django.template.response import TemplateResponse
 from log_servizi.models import ServerVersione
 import errors
 from servizi.utils import getdef
-from utils import dict_cursor, project, messaggio, populate_form, hist_redirect, giorni_settimana
-from utils import AtacMobileForm, permission_links, restore_login_params
+from .utils import dict_cursor, project, messaggio, populate_form, hist_redirect, giorni_settimana
+from .utils import AtacMobileForm, permission_links, restore_login_params
 import uuid
 import hashlib
 import datetime

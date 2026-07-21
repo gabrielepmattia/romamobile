@@ -1,6 +1,6 @@
 # coding: utf-8
 
-from models import *
+from .models import *
 import settings
 from pprint import pprint
 from collections import defaultdict

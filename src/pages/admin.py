@@ -20,7 +20,7 @@
 #
 
 from django.contrib import admin
-from models import *
+from .models import *
 
 class PageAdmin(admin.ModelAdmin):
 	list_display = ['slug', 'title', 'from_date', 'to_date', 'enabled']

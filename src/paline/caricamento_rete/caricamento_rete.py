@@ -21,7 +21,7 @@
 
 
 from __future__ import print_function
-from dbf import *
+from .dbf import *
 from datetime import date, time, datetime, timedelta 
 import sys
 from paline.models import *

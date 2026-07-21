@@ -19,7 +19,7 @@
 #
 
 from django.contrib.gis import admin
-from models import *
+from .models import *
 
 admin.site.register(Channel)
 admin.site.register(Message)

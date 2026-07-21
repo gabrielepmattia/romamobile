@@ -20,7 +20,7 @@
 #
 
 from django.contrib import admin
-from models import *
+from .models import *
 
 class LogModelAdmin(admin.ModelAdmin):
 	list_display = ['url', 'time', 'user_agent', 'ip']

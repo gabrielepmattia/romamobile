@@ -33,11 +33,11 @@ except ImportError:  # Python 3
 from parcheggi import models as parcheggi
 from servizi.utils import model2contenttype
 
-import tpl
+from . import tpl
 import pyximport
 pyximport.install()
 
-import grafo
+from . import grafo
 
 
 class Profiler(object):

@@ -20,7 +20,7 @@
 #
 
 
-from models import *
+from .models import *
 from django.http import HttpResponseRedirect
 from datetime import datetime, timedelta
 

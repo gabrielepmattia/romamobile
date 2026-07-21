@@ -19,7 +19,7 @@
 #    Roma mobile. If not, see http://www.gnu.org/licenses/.
 #
 
-from models import *
+from .models import *
 import risorse.models
 import paline.models
 from django.db import models, connections, transaction

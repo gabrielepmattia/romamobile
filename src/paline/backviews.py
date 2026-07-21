@@ -19,7 +19,7 @@
 #    Roma mobile. If not, see http://www.gnu.org/licenses/.
 #
 
-from models import *
+from .models import *
 from django.db import models, connections, transaction
 from django.core.cache import cache
 from servizi.utils import dict_cursor, project, datetime2mysql, group_required, autodump
@@ -37,8 +37,8 @@ try:
 	import cPickle as pickle
 except ImportError:  # Python 3
 	import pickle
-import gmaps
-import views
+from . import gmaps
+from . import views
 from paline.views import paline7, _dettaglio_paline, _dettaglio_paline_app
 from pprint import pprint
 from percorso.views import infopoint_to_cp

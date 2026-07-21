@@ -20,20 +20,20 @@
 #
 
 from __future__ import print_function
-import tpl
+from . import tpl
 import pyximport; pyximport.install()
 from rpyc.utils.server import ThreadedServer
 import rpyc
 import pyproj
-import tratto
+from . import tratto
 from time import sleep
 from datetime import date, time, timedelta, datetime
-from mapstraction import BoundingBox
-from geomath import gbfe_to_wgs84, wgs84_to_gbfe
-import grafo as graph
-import osm
-import geocoder
-import gmaps
+from .mapstraction import BoundingBox
+from .geomath import gbfe_to_wgs84, wgs84_to_gbfe
+from . import grafo as graph
+from . import osm
+from . import geocoder
+from . import gmaps
 from paline.caricamento_rete.caricamento_rete import lancia_processo_caricamento_rete
 from django.core.mail import send_mail
 import traceback
@@ -56,8 +56,8 @@ except ImportError:  # Python 3
 from IPython import embed
 from copy import copy, deepcopy
 import logging
-import carpoolinggraph
-import tomtom
+from . import carpoolinggraph
+from . import tomtom
 from mercury.models import MercuryListener, autopickle, queued, Peer, autostored, DaemonControl
 from django import db
 from ztl.models import ZTL

@@ -35,7 +35,7 @@ import uuid
 from django.http import HttpResponse
 import datetime
 from servizi.utils import datetime2mysql
-import middleware
+from . import middleware
 from django.http import HttpResponseRedirect
 from django.template.response import TemplateResponse
 from django.shortcuts import render

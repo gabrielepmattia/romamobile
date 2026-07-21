@@ -29,17 +29,17 @@ import traceback
 #from shapely.geometry import LineString, Point, MultiPoint
 #from IPython.Shell import IPShellEmbed
 import codecs
-from grafo import Nodo, Arco, Grafo
-from geomath import wgs84_to_gbfe
+from .grafo import Nodo, Arco, Grafo
+from .geomath import wgs84_to_gbfe
 #import raggiungibilita
 
 from xml.etree import ElementTree as ET
 #import cPickle as pickle
 #import dijkstra
-import geomath
+from . import geomath
 #from globals import glb
-from tratto import TrattoRoot, TrattoPiedi, TrattoPiediArco, TrattoBici, TrattoBiciArco
-from tratto import TrattoAuto, TrattoAutoArco
+from .tratto import TrattoRoot, TrattoPiedi, TrattoPiediArco, TrattoBici, TrattoBiciArco
+from .tratto import TrattoAuto, TrattoAutoArco
 from copy import copy
 
 try:

@@ -61,9 +61,33 @@ def module_names():
 				yield name
 
 
+def import_isolated(name):
+	"""
+	Importa `name` in un processo figlio e ritorna True se ci riesce.
+
+	L'isolamento non e' un vezzo: importare tutto nello stesso interprete produce
+	falsi positivi (per esempio paline.gtfs_pb2 e google.transit.gtfs_realtime_pb2
+	registrano lo stesso .proto nel descriptor pool e la seconda import esplode).
+	Il fork parte da un processo che ha gia' caricato Django, quindi costa poco.
+	"""
+	pid = os.fork()
+	if pid == 0:
+		try:
+			__import__(name)
+		except Exception:
+			traceback.print_exc()
+			os._exit(1)
+		os._exit(0)
+	_, status = os.waitpid(pid, 0)
+	return status == 0
+
+
 def main(argv):
 	os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'settings')
 	sys.path.insert(0, SRC)
+
+	# Carica i settings una volta sola nel padre: i figli li ereditano.
+	__import__(os.environ['DJANGO_SETTINGS_MODULE'])
 
 	only = argv[1] if len(argv) > 1 else None
 	failures = []
@@ -73,22 +97,17 @@ def main(argv):
 		if only and not (name == only or name.startswith(only + '.')):
 			continue
 		checked += 1
-		try:
-			__import__(name)
-		except Exception:
-			failures.append((name, traceback.format_exc()))
-			print('FAIL %s' % name)
-		else:
+		sys.stdout.flush()
+		if import_isolated(name):
 			print('ok   %s' % name)
+		else:
+			failures.append(name)
+			print('FAIL %s' % name)
 
 	print('')
 	print('%d moduli importati, %d falliti' % (checked, len(failures)))
-	for name, tb in failures:
-		print('')
-		print('=' * 70)
-		print(name)
-		print('=' * 70)
-		print(tb)
+	for name in failures:
+		print('FAIL %s' % name)
 	return 1 if failures else 0
 
 

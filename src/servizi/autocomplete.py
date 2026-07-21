@@ -24,7 +24,7 @@ import marisa_trie as trie
 from collections import defaultdict
 from pprint import pprint
 import requests
-from infopoint import ESRI_GEOCODER_URL_PREFIX
+from .infopoint import ESRI_GEOCODER_URL_PREFIX
 import json
 import re
 

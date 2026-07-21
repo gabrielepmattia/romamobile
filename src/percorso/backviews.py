@@ -19,7 +19,7 @@
 #    Roma mobile. If not, see http://www.gnu.org/licenses/.
 #
 
-from models import *
+from .models import *
 from django.db import models, connections, transaction
 from paline.geomath import wgs84_to_gbfe, gbfe_to_wgs84
 from servizi.utils import dict_cursor, project, datetime2mysql, group_required
@@ -31,7 +31,7 @@ try:
 	import cPickle as pickle
 except ImportError:  # Python 3
 	import pickle
-import views
+from . import views
 from paline import tratto
 from pprint import pprint
 import urlparse

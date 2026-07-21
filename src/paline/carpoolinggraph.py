@@ -23,9 +23,9 @@
 from __future__ import print_function
 from datetime import date, time, datetime, timedelta
 import traceback
-from grafo import Nodo, Arco, Grafo
-from geomath import wgs84_to_gbfe, distance
-from tratto import TrattoCarPooling, TrattoCarPoolingArco, TrattoCarPoolingAttesa
+from .grafo import Nodo, Arco, Grafo
+from .geomath import wgs84_to_gbfe, distance
+from .tratto import TrattoCarPooling, TrattoCarPoolingArco, TrattoCarPoolingAttesa
 from carpooling.models import PassaggioRichiesto, PassaggioOfferto, UtenteCarPooling
 
 LUNGHEZZA_MINIMA_CARPOOLING = 1500

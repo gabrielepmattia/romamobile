@@ -12,7 +12,7 @@ try:
 	import cPickle as pickle
 except ImportError:  # Python 3
 	import pickle
-import views
+from . import views
 from pprint import pprint
 
 

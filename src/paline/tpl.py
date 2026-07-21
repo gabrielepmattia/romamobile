@@ -20,24 +20,24 @@
 #
 
 from __future__ import print_function
-from bt import AVLTree as Avl
+from .bt import AVLTree as Avl
 import pyximport; pyximport.install()
-from models import *
+from .models import *
 from datetime import datetime, timedelta, time, date
 try:
 	import Queue as queue
 except ImportError:  # Python 3
 	import queue
 from threading import Thread, Lock
-from grafo import Arco, Nodo, Grafo, DijkstraPool
+from .grafo import Arco, Nodo, Grafo, DijkstraPool
 import shapefile
 import math
 from copy import copy
 from time import sleep
 import logging
 import traceback
-import geomath
-import geocoder
+from . import geomath
+from . import geocoder
 from django.contrib.gis.geos import Point
 from django.db import transaction as djangotransaction
 from servizi.utils import datetime2compact, datetime2time, transaction, date2datetime
@@ -47,11 +47,11 @@ from servizi.utils import mostra_avanzamento, mysql2datetime, date2mysql
 from servizi.models import Festivita
 import os
 import settings
-import tratto
+from . import tratto
 from django import db
 from django.db.models import Avg, Max, Min, Count, F
 import os, os.path
-from floatingvehicle import FVPath
+from .floatingvehicle import FVPath
 from constance import config
 try:
 	import cPickle as pickle
@@ -61,11 +61,11 @@ from mercury.models import Mercury, DaemonControl
 from risorse import models as risorse
 from ztl.views import Orari, orari_per_ztl
 import xmlrpclib
-import tomtom
+from . import tomtom
 from collections import defaultdict
 from pprint import pprint
 from random import Random
-from gtfs import realtime, parse_static, alerts #, map_id_veicolo
+from .gtfs import realtime, parse_static, alerts #, map_id_veicolo
 # import gtfs_rt
 
 

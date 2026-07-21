@@ -33,7 +33,7 @@ from servizi.utils import datetime2date, date2datetime, mysql2datetime, date2mys
 from servizi.utils import transaction_commit_manually, template_to_mail
 from mercury.models import DaemonControl
 from paline.caricamento_rete.caricamento_rete import carica_rete_auto, scarica_orari_partenza_giorno, scarica_rete
-from gtfs import parse_static
+from .gtfs import parse_static
 import traceback
 import os, os.path, shutil
 import settings

@@ -20,7 +20,7 @@
 #
 
 from django.conf.urls.defaults import patterns, include, url
-import views
+from . import views
 
 urlpatterns = patterns('',
 	url('^info-cookies$', views.cookies),

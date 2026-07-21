@@ -24,7 +24,7 @@ from datetime import date, time, datetime, timedelta
 from servizi.utils import RPyCAllowRead, modifica_url_con_storia, getdef
 from django.utils.safestring import mark_safe
 from servizi.utils import ricapitalizza
-from geomath import gbfe_to_wgs84, segment_point_dist, distance, piede_perpendicolare
+from .geomath import gbfe_to_wgs84, segment_point_dist, distance, piede_perpendicolare
 from django.utils.translation import ugettext as _
 from django.template.defaultfilters import date as datefilter
 from pprint import pprint

@@ -28,18 +28,18 @@ import pyximport; pyximport.install()
 #from shapely.geometry import LineString, Point, MultiPoint
 #from IPython.Shell import IPShellEmbed
 import codecs
-from grafo import Nodo, Arco, Grafo
-from geomath import wgs84_to_gbfe
-import shapereader
+from .grafo import Nodo, Arco, Grafo
+from .geomath import wgs84_to_gbfe
+from . import shapereader
 try:
 	import cPickle as pickle
 except ImportError:  # Python 3
 	import pickle
-import geomath
+from . import geomath
 import math
-from tratto import TrattoRoot, TrattoPiedi, TrattoPiediArco, TrattoBici, TrattoBiciArco, TrattoAutoAttesaZTL
-from tratto import TrattoAuto, TrattoAutoArco
-import raggiungibilita
+from .tratto import TrattoRoot, TrattoPiedi, TrattoPiediArco, TrattoBici, TrattoBiciArco, TrattoAutoAttesaZTL
+from .tratto import TrattoAuto, TrattoAutoArco
+from . import raggiungibilita
 from django.contrib.gis.geos import Point
 from ztl.models import ZTL
 from gis.models import Multipoligono

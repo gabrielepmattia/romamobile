@@ -28,7 +28,7 @@ import time, datetime
 import exceptions
 import math
 from paline import geomath
-from utils import datetime2time
+from .utils import datetime2time
 from django.contrib.gis.geos import Point
 from pprint import pprint
 

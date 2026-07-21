@@ -19,7 +19,7 @@
 #    Roma mobile. If not, see http://www.gnu.org/licenses/.
 #
 
-from models import *
+from .models import *
 from django.db import models, connections, transaction
 from servizi.utils import dict_cursor, project, datetime2mysql, group_required
 from datetime import datetime, timedelta, time, date

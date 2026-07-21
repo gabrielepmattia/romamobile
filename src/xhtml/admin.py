@@ -20,7 +20,7 @@
 #
 
 from django.contrib.gis import admin
-from models import *
+from .models import *
 
 class AdAdmin(admin.OSMGeoAdmin):
 	list_display = ['slug', 'from_date', 'to_date', 'boost', 'n_views', 'max_views', 'count']

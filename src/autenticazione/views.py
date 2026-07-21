@@ -19,7 +19,7 @@
 #    Roma mobile. If not, see http://www.gnu.org/licenses/.
 #
 
-from models import *
+from .models import *
 from django.db import models, connections, transaction
 from log_servizi.models import ServerVersione
 import errors
@@ -27,8 +27,8 @@ from servizi.utils import dict_cursor
 import uuid
 import hashlib
 from django.contrib.auth import login, authenticate
-from backends import ServiziBackend
-from models import *
+from .backends import ServiziBackend
+from .models import *
 from datetime import date, time, datetime, timedelta
 
 """

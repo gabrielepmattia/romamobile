@@ -30,10 +30,10 @@ import sys
 import string
 import time
 
-try: import binnum 
+try: from . import binnum
 except ImportError: from mocons.lib.utils import binnum 
 
-try: import strutil 
+try: from . import strutil
 except ImportError: from mocons.lib.utils import strutil 
 
 class Dbf:

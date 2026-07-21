@@ -20,7 +20,7 @@
 #
 
 
-from models import *
+from .models import *
 from django.contrib.auth.backends import ModelBackend
 
 class ServiziBackend(ModelBackend):

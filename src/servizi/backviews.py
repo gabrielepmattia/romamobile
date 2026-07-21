@@ -20,7 +20,7 @@
 #
 
 from __future__ import print_function
-from models import *
+from .models import *
 from django.db import models, connections, transaction
 from django.db.models import Q
 from paline.models import get_web_cpd_mercury, get_web_cl_mercury
