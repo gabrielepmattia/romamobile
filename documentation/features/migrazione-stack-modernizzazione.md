@@ -304,6 +304,16 @@ test manuali) è a carico dell'ambiente di deploy dopo ogni batch.
   previsioni ("Nessun autobus" fuori orario di servizio), quindi la catena
   `web` → RPyC → `giano` è integra.
 
+- **Batch 3 + fix `/metro`** (`9ccf579`, `3bdb1d9`): dopo `git pull` + restart, tutti
+  gli endpoint sopra restano **200** con le stesse dimensioni di risposta, e si
+  aggiungono `/paline/linea/MEA`, `/meteo/`, `/parcheggi/`, `/ztl/`, `/lingua/`,
+  `/percorso/js/` → 200. `/metro` rende "Metro A / Metro B / Metro B1 / Metro C".
+  Nei log del `web` nessun `ImportError`: gli unici due 500 sono quelli della finestra
+  di riavvio descritta sotto.
+- **Preesistente, non toccato:** `/info/...` risponde 404 perché l'app `info` non è in
+  `settings.XHTML_APPS` e quindi non è instradata — ma il banner dei cookie punta a
+  `/info/info-cookies`. Da decidere a parte se instradare l'app o correggere il link.
+
 **Nota operativa (da tenere nel runbook di deploy):** quando un batch tocca un
 `.pyx`, `pyximport` invalida la cache in `~/.pyxbld` e **ricompila a runtime** al
 riavvio di `giano`. Per ~30 s dopo il restart tutti gli endpoint che passano dall'RPC
