@@ -70,12 +70,23 @@ progetto e va trattato come progetto indipendente dal backend.
 |---|---|---|
 | `BeautifulSoup==3.2.1` | `beautifulsoup4` | ✅ batch 6 |
 | `pycrypto==2.6.1` (morto, CVE noti) | nessuno: non era importato | ✅ batch 6 (via rimozione di `paramiko`) |
-| `pycha`, `cGPolyEncode`, `pycurl`, `PyYAML` | nessuno: non importati | ✅ batch 6 |
+| `pycha`, `pycurl`, `PyYAML` | nessuno: non importati | ✅ batch 6 |
+| `cGPolyEncode==0.1.1` (nessuna release Py3) | `polyline` | ✅ batch 8 |
 | `Cython==0.23.4` | Cython moderno |
 | `pyproj==1.9.5.1` | `pyproj` 3.x (API cambiata) |
 | `rpyc==3.3.0` | RPyC attuale |
 | `django-json-rpc`, `django-constance`, `gtfs-realtime-bindings==0.0.6` | versioni correnti |
-| `Django==1.5.12` | Django LTS |
+| `Django==1.5.12` | Django LTS | Fase 2 |
+
+### Dipendenze ancora da affrontare, e cosa comporta ciascuna
+
+| Pacchetto | Nota |
+|---|---|
+| `pyproj==1.9.5.1` | `2.2.2` è l'ultima con Python 2. L'API cambia (`Proj`, `transform`): tocca `geomath`, quindi **tutte** le conversioni Gauss-Boaga ↔ WGS84. Da fare con un test di caratterizzazione sulle coordinate, non a occhio. |
+| `rpyc==3.3.0` | La 4.x supporta Py3 ma cambia il protocollo: `web` e `giano` vanno aggiornati **insieme**, non uno alla volta. Unico punto della migrazione che non è incrementale. |
+| `gtfs-realtime-bindings==0.0.6` | Legata alla versione di `protobuf`; da muovere insieme a quella. |
+| `django-json-rpc`, `django-constance`, `django-simple-captcha`, `django-redis` | Versioni vincolate a Django: si muovono in Fase 2. Nota: `django-simple-captcha 0.5.1` dichiara già `Django>=1.7`, e pip lo segnala a ogni build. |
+| `Pillow==2.3.0`, `lxml==3.3.3`, `requests==2.9.1`, `redis==2.10.5`, `pytz==2015.7` | Nessun ostacolo noto: hanno tutte versioni Py3. Aggiornabili quando serve. |
 
 ---
 
@@ -436,6 +447,31 @@ test manuali) è a carico dell'ambiente di deploy dopo ogni batch.
     quel salto:
     - `grafo.pyx:68,69` — `cpdef variables will not be supported in Cython 3`
     - `grafo.pyx:69` — `cdef variable 'time' declared after it is used`
+
+- **Fase 1 · batch 8 — `cGPolyEncode` → `polyline`.** Chiude l'ultimo bloccante Py3
+  noto fra le dipendenze: `cGPolyEncode` è un binding C senza release Python 3, e
+  serve a un solo punto, l'encoding delle polilinee per le mappe statiche di Google
+  in `paline/gmaps.py`.
+  - **Le due librerie non sono equivalenti**, e `scripts/check_polyline_equivalence.py`
+    misura quanto invece di andare a intuito: `cGPolyEncode` scarta i vertici sotto
+    una soglia (come il vecchio encoder Google Maps v2), `polyline` li tiene tutti.
+
+    | vertici in ingresso | tenuti da cGPolyEncode | tenuti da polyline | caratteri (vecchio → nuovo) |
+    |---|---|---|---|
+    | 10 | 10.0 | 10.0 | 44.5 → 44.7 |
+    | 50 | 49.7 | 50.0 | 197.3 → 198.4 |
+    | 200 | 198.9 | 200.0 | 770.0 → 773.8 |
+
+    Cioè: tracciato semmai **più fedele**, stringa più lunga dello **0.5 %** — molto
+    lontano dal limite di lunghezza degli URL di Static Maps.
+  - ⚠️ Attenzione all'ordine delle coordinate: i punti vengono da
+    `geomath.gbfe_to_wgs84()`, che restituisce **`(lon, lat)`**, mentre
+    `polyline.encode()` di default si aspetta `(lat, lon)`. Serve `geojson=True`.
+  - Trovato per strada: `settings.GOOGLE_MAPS_API_KEY` era letto da `gmaps.py` ma
+    **non definito da nessuna parte** — `AttributeError` non appena quel codice
+    veniva raggiunto. Ora ha un default vuoto letto dai secrets: le mappe statiche
+    restano non funzionanti (Google rifiuta le richieste senza chiave) ma non si
+    portano dietro la pagina.
 
 ### Validazione deploy 2026-07-21 (`hetzner-4gb-1`)
 
