@@ -54,13 +54,15 @@ progetto e va trattato come progetto indipendente dal backend.
 
 ### "Landmine" Python 2 → 3 (misurate)
 
-| Pattern | Occorrenze | Difficoltà |
-|---|---|---|
-| `print "..."` statement | 33 file | Banale |
-| `django.conf.urls.defaults` / `patterns()` (rimosso) | 32 file | Meccanico |
-| `cPickle` / `Queue` / `xrange` / `iteritems` / `has_key` | 22 file | Meccanico |
-| `unicode()` / `basestring` / `cmp=` | ~40 punti | Medio (str/bytes) |
-| `.pyx` Cython (grafo, geocoder) | 6 file | Ricompilazione + fix minori |
+| Pattern | Occorrenze | Difficoltà | Stato |
+|---|---|---|---|
+| `print "..."` statement | 33 file | Banale | ✅ batch 1 |
+| `except X, e:` / `raise X, msg` | 48 punti | Banale | ✅ batch 2 |
+| `cPickle` / `Queue` / `xrange` / `iteritems` / `has_key` | 22 file | Meccanico | ✅ batch 2 |
+| `django.conf.urls.defaults` / `patterns()` (rimosso) | 32 file | Meccanico | Fase 2 |
+| `unicode()` / `basestring` / `cmp=` | ~40 punti | Medio (str/bytes) | da fare |
+| import relativi impliciti (`from models import *`) | diffusi | Medio | da fare |
+| `.pyx` Cython (grafo, geocoder) | 6 file | Ricompilazione + fix minori | da fare |
 
 ### Dipendenze morte / da sostituire
 
@@ -176,6 +178,7 @@ come martello per l'intero sistema.
 | Estensioni Cython non ricompilano | Medio | Isolare in Fase 1, fallback documentato |
 | App di terze parti senza versione compatibile | Medio | Valutare sostituti in Fase 0; elenco alternative |
 | Deploy: `giano` va riavviato per ricaricare la rete | Basso | Documentato nel runbook di deploy |
+| Toccare un `.pyx` allunga il restart (ricompilazione `pyximport`): ~30 s di 500 sugli endpoint RPC | Basso | Atteso e documentato; verificare dopo la finestra, non durante |
 
 ---
 
@@ -229,8 +232,7 @@ test manuali) è a carico dell'ambiente di deploy dopo ogni batch.
     **sia** con `python:2.7-slim` **sia** con `python:3.11-slim`. Il backend non ha
     più errori di *sintassi* Py3 (restano quelli semantici: `unicode`, str/bytes,
     import impliciti, Django 1.5).
-  - ⚠️ Da validare nel deploy: `grafo.pyx`/`geocoder.pyx` sono compilati a runtime
-    da `pyximport`, quindi il riavvio di `giano` li ricompila.
+  - ✅ Validato in deploy (`hetzner-4gb-1`, 2026-07-21): vedi sotto.
 
 ### Validazione deploy 2026-07-21 (`hetzner-4gb-1`)
 
@@ -240,3 +242,28 @@ test manuali) è a carico dell'ambiente di deploy dopo ogni batch.
   rispondeva **500**. Confermato prima dell'aggiornamento.
 - `git merge --ff-only origin/master` → `d5200f0`. Il codice è montato via bind
   (`./src:/app`), perciò non serve rebuild: basta riavviare `giano` e `web`.
+- Dopo `docker restart romamobile-giano-1 romamobile-web-1`, smoke test su
+  `127.0.0.1:8000` (dietro Traefik):
+
+  | Endpoint | Prima (`6ce20d5`) | Dopo batch 1 | Dopo batch 2 |
+  |---|---|---|---|
+  | `/` | 200 | 200 | 200 (7426 b) |
+  | `/metro` | **500** | 200 | 200 (5329 b) |
+  | `/paline/linea/64` | **500** | 200 | 200 (4659 b) |
+  | `/paline/percorso/RM173` | — | 200 | 200 (10925 b) |
+  | `/paline/palina/73992` (RPC → `giano`) | — | 200 | 200 (5370 b) |
+  | `/paline/elenco_linee` | — | 200 | 200 (215721 b) |
+  | `/news/`, `/percorso/` | 200 | 200 | 200 |
+
+  Le dimensioni delle risposte sono **identiche** tra batch 1 e batch 2: nessuna
+  differenza di contenuto renderizzato. Il dettaglio palina mostra il riquadro
+  previsioni ("Nessun autobus" fuori orario di servizio), quindi la catena
+  `web` → RPyC → `giano` è integra.
+
+**Nota operativa (da tenere nel runbook di deploy):** quando un batch tocca un
+`.pyx`, `pyximport` invalida la cache in `~/.pyxbld` e **ricompila a runtime** al
+riavvio di `giano`. Per ~30 s dopo il restart tutti gli endpoint che passano dall'RPC
+rispondono **500** (`AttributeError: 'NoneType' object has no attribute 'root'` in
+`mercury/models.py:sync_any`, cioè connessione RPyC non ancora disponibile). Non è una
+regressione: va atteso il completamento prima di dichiarare fallito un deploy. Un
+`restart` che non tocca i `.pyx` è invece immediato.
