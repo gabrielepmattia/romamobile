@@ -253,6 +253,7 @@ WS_APPS = [
 # Applicazioni che erogano servizi di front-end (xhtml)
 XHTML_APPS = [
 	'carpooling',
+	'info',
 	'lingua',
 	'meteo',
 	'metro',

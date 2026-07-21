@@ -806,11 +806,16 @@ def group_by(l, key=None, func=None):
 	if key is not None:
 		func = lambda x: x[key]
 	out = []
-	old = None
+	# Sentinella distinta da None: None e' una chiave legittima, e usarlo come
+	# "non ancora iniziato" faceva sparire il gruppo con chiave None (e lasciava
+	# `current` indefinito se il primo elemento aveva chiave None).
+	mai_iniziato = object()
+	old = mai_iniziato
+	current = []
 	for x in l:
 		new = func(x)
 		if old != new:
-			if old is not None:
+			if old is not mai_iniziato:
 				out.append(current)
 			old = new
 			current = []

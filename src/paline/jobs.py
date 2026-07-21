@@ -71,6 +71,7 @@ def aggrega_stat(job=None, data_limite=None):
 	assert job is not None, "Il job non puo' essere None"
 
 	d = job.last_element_ts
+	esci = False
 	while not esci:
 		d = d + timedelta(days=1)
 		if d <= data_limite:

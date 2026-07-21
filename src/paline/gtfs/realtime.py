@@ -100,4 +100,4 @@ def test_timestamp():
 
 if __name__ == '__main__':
 	# test_raw()
-	test_decode()
+	test_timestamp()

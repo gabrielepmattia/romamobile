@@ -23,6 +23,7 @@
 from __future__ import print_function
 from datetime import date, time, datetime, timedelta
 import traceback
+import pyximport; pyximport.install()  # grafo e' un modulo Cython
 from .grafo import Nodo, Arco, Grafo
 from .geomath import wgs84_to_gbfe, distance
 from .tratto import TrattoCarPooling, TrattoCarPoolingArco, TrattoCarPoolingAttesa

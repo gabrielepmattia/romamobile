@@ -205,7 +205,7 @@ class Crud(object):
 		If multi is True, value is a dict {name: value}
 		"""
 		if type == 'date':
-			if values == '':
+			if value == '':
 				return None, False
 			else:
 				try:

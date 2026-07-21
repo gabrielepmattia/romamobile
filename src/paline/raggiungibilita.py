@@ -20,6 +20,7 @@
 #
 
 from __future__ import print_function
+import pyximport; pyximport.install()  # grafo e' un modulo Cython
 from .grafo import DijkstraPool
 import datetime
 

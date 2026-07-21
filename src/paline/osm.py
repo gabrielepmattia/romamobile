@@ -31,9 +31,10 @@ import traceback
 #from shapely.geometry import LineString, Point, MultiPoint
 #from IPython.Shell import IPShellEmbed
 import codecs
+import pyximport; pyximport.install()  # grafo e' un modulo Cython
 from .grafo import Nodo, Arco, Grafo
 from .geomath import wgs84_to_gbfe
-#import raggiungibilita
+from . import raggiungibilita
 
 from xml.etree import ElementTree as ET
 #import cPickle as pickle

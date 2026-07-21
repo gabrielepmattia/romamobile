@@ -11,20 +11,25 @@ from mercury.models import Mercury
 RESTART_TIMEOUT = timedelta(minutes=2)
 peer_type = 'romatpl'
 
-# A UDP server
-# Set up a UDP server
-UDPSock = socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
-
-# Listen on port
-# (to all IP addresses on this system)
-listen_addr = ("", PORT)
-UDPSock.bind(listen_addr)
 
 class Command(BaseCommand):
 	args = """Nessun argomento"""
 	help = 'Decoder flusso dati AVM RomaTPL'
 
 	def handle(self, *args, **options):
+		# La socket si apriva a livello di modulo, su una PORT che non e' mai
+		# stata definita da nessuna parte: il modulo sollevava NameError al solo
+		# import. Ora la porta arriva dai settings e il bind avviene qui, cosi'
+		# importare il comando non tiene occupata una porta UDP.
+		port = getattr(settings, 'ROMATPL_UDP_PORT', None)
+		if port is None:
+			raise CommandError(
+				"ROMATPL_UDP_PORT non e' configurata nei settings: "
+				"il decoder AVM RomaTPL non puo' mettersi in ascolto."
+			)
+		UDPSock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+		UDPSock.bind(("", port))
+
 		while True:
 			try:
 				# Setup mercury client
