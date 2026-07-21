@@ -91,6 +91,11 @@ progetto e va trattato come progetto indipendente dal backend.
 - [ ] Test di caratterizzazione sul contratto RPC `web` ↔ `giano` (input/output dei
       metodi `exposed_*` più usati: `route_stats`, `tempi_attesa`, `cerca_percorso`).
 - [ ] Fissare i dati/fixtures minimi per far girare i test in modo riproducibile.
+- [x] `scripts/check_imports.py`: importa ogni modulo del backend (un fork per
+      modulo) con i settings Django caricati. Intercetta gli import rotti, che
+      `compileall` non vede.
+- [x] `scripts/check_sort_equivalence.py`: test di caratterizzazione sull'ordinamento
+      degli arrivi, usato per validare il passaggio da `cmp=` a `key=`.
 
 **Exit criteria:** una `make test` (o equivalente) che gira in CI/Docker e passa sullo
 stack attuale (Py2/Django1.5).
@@ -114,7 +119,9 @@ stack attuale (Py2/Django1.5).
       nei `.py` dei package applicativi. Restano da fare i `.pyx` (insieme alla
       ricompilazione Cython) e i moduli top-level di `src/`, che sono caricati come
       top-level e quindi devono restare assoluti.
-- [ ] Affrontare a mano i punti str/bytes/`unicode` e i `cmp=` (→ `key=`).
+- [x] Affrontare a mano i punti `unicode()` e i `cmp=` (→ `cmp_to_key`), via
+      `servizi/py3compat.py`. Restano da rivedere i punti str/bytes veri (pickle,
+      RPyC, I/O di file), che non sono una sostituzione meccanica.
 - [ ] Ricompilare le estensioni `.pyx` con Cython moderno; correggere le differenze
       di tipizzazione emerse.
 - [ ] Aggiornare `requirements.txt` e il `Dockerfile` (immagine base Py3).
@@ -278,6 +285,43 @@ test manuali) è a carico dell'ambiente di deploy dopo ogni batch.
     `paline.management.commands.romatpl_decoder`, tutti già rotti prima e da
     guardare a parte).
 
+- **Bugfix maggiore — tutte le linee risultavano "non attive adesso".** Stesso guasto
+  di `9fa9beb`, sul feed rimasto indietro: `romamobilita.it` è passato da Drupal a
+  WordPress e ora **301-redirige** le vecchie URL. `requests.head()` non segue i
+  redirect, quindi `get_gtfs_rt_last_update()` leggeva `Last-Modified` da una risposta
+  di redirect che non ce l'ha → `KeyError`. Essendo la **prima** istruzione di
+  `dati_da_gtfs_rt()`, ogni giro di aggiornamento moriva prima di toccare i dati:
+  `stat_percorsi` restava agli zeri iniziali, ogni percorso aveva
+  `departures + vehicles == 0` e la UI nascondeva tutto — metro **e** autobus.
+  - **Sintomo nei log:** `Aggiornamento arrivi!` mai seguito da `completato!!`, con il
+    watchdog che riavviava in ciclo. Utile come check di salute.
+  - Se `Last-Modified` manca comunque, ora si ripiega sull'ora corrente: il chiamante
+    aspetta in loop finché il valore *cambia*, quindi un header assente bloccherebbe
+    l'aggiornamento per sempre. Rielaborare un feed già visto costa meno.
+  - Dopo il fix: `MEA` 🕒 14 partenze/ora, linea `64` 🚍 2 veicoli, dettaglio palina
+    con arrivi e occupazione posti. _(commit separato, non parte della migrazione.)_
+- **Fase 1 · batch 4 — `unicode()`, `cmp=`, indicizzazione di `.values()`.**
+  Introdotto `servizi/py3compat.py` con i due soli nomi che servono davvero
+  (`text_type` e un `cmp()` scritto come `(a > b) - (a < b)`): fa il lavoro di `six`
+  senza toccare `requirements.txt` e quindi senza rebuild dell'immagine. Quando il
+  backend sarà solo Py3 quel modulo si svuota.
+  - `unicode(x)` → `text_type(x)`: 27 punti in 10 file.
+  - `unicode(cell, encoding)` → `cell.decode(encoding)` in `unicode_csv.py`, che è la
+    scrittura onesta di ciò che fa. Quel modulo è impalcatura CSV di Py2 e va
+    **eliminato**, non portato: annotato nella sua docstring.
+  - `sort(cmp=f)` → `sort(key=cmp_to_key(f))` (5 punti) e `int.__cmp__` → `cmp()`.
+    Le funzioni di confronto sono a più livelli: riscriverle come `key=` sarebbe
+    stato facile da sbagliare in silenzio, `cmp_to_key` è la conversione che non può
+    cambiare l'ordine.
+  - `tp.percorsi.values()[0]` → `list(...)[0]` in `tpl.py`, dove `percorsi` è un dict.
+    **Non** applicato a `news/views.py`: lì `.values()` è un QuerySet Django, che
+    resta indicizzabile su Py3 — e `list()` caricherebbe tutte le righe.
+  - **Verifica:** `compileall` pulito su 2.7 e 3.11; `check_imports` dà 202 moduli con
+    gli stessi 4 fallimenti preesistenti; nuovo `scripts/check_sort_equivalence.py`
+    confronta `sort(cmp=)` e `sort(key=cmp_to_key())` su 4000 permutazioni casuali
+    (con i casi limite: `-1`, capolinea, partenza sconosciuta, pareggi) e ottiene
+    ordinamenti identici.
+
 ### Validazione deploy 2026-07-21 (`hetzner-4gb-1`)
 
 - Ambiente: `~/apps/_romamobile/repo/romamobile`, stack compose `romamobile`
@@ -313,6 +357,11 @@ test manuali) è a carico dell'ambiente di deploy dopo ogni batch.
 - **Preesistente, non toccato:** `/info/...` risponde 404 perché l'app `info` non è in
   `settings.XHTML_APPS` e quindi non è instradata — ma il banner dei cookie punta a
   `/info/info-cookies`. Da decidere a parte se instradare l'app o correggere il link.
+
+- **Batch 4 + fix feed realtime** (`dc58e65`, `4a498b9`): dopo il restart, tutti gli
+  endpoint 200 e le risposte **più grandi** di prima (dettaglio palina 5370 → 8576 b,
+  linea 64 4659 → 5483 b) perché le linee non sono più nascoste e mostrano previsioni
+  e occupazione posti. Nei log di `giano` ricompare `Aggiornamento arrivi completato!!`.
 
 **Nota operativa (da tenere nel runbook di deploy):** quando un batch tocca un
 `.pyx`, `pyximport` invalida la cache in `~/.pyxbld` e **ricompila a runtime** al
