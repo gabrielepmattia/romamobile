@@ -72,6 +72,11 @@ pattern_list = [
 	url('^favicon.png', django.views.static.serve,
 		{'document_root': os.path.join(os.path.dirname(__file__), 'xhtml/static').replace('\\','/'), 'path': 'img/favicon.png'},
 	),
+	# Il service worker deve stare in root, altrimenti il suo scope si limita
+	# alla cartella da cui e' servito (/xhtml/s/) e non controllerebbe il sito.
+	url(r'^sw\.js$', django.views.static.serve,
+		{'document_root': os.path.join(os.path.dirname(__file__), 'xhtml/static').replace('\\','/'), 'path': 'js/sw.js'},
+	),
 	url(r'^xhtml/ga$', google_analytics),
 	url(r'^ws/xml/lingue/', include('lingua.wsurls')), # Workaround temporaneo
 	url(r'^telegram_channel/', include('telegram_channel.urls')),

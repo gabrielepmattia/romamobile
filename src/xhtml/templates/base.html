@@ -19,6 +19,12 @@
 		{% endif %}
 		<link rel="icon" type="image/png" href="/xhtml/s/img/favicon.png" />
 		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<link rel="manifest" href="/xhtml/s/manifest.json" />
+		<meta name="theme-color" content="#f84f00" />
+		<link rel="apple-touch-icon" href="/xhtml/s/img/apple-touch-icon.png" />
+		<meta name="apple-mobile-web-app-capable" content="yes" />
+		<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+		<meta name="apple-mobile-web-app-title" content="Roma mobile" />
 		<link href="https://fonts.googleapis.com/css?family=Droid+Sans:400,700&display=swap" rel="stylesheet">
 		{% block InternalStyle %}
 		{% endblock %}{% block fullscript %}{% endblock %}
@@ -261,6 +267,16 @@
 
 	  ga('create', 'UA-88036379-1', 'auto');
 	  ga('send', 'pageview');
+		</script>
+		<script>
+			/* Service worker: serve solo a dare una pagina di cortesia offline e a
+			   tenere in cache gli asset statici. Le pagine con i tempi di attesa
+			   passano sempre dalla rete: vedi il commento in /sw.js */
+			if ('serviceWorker' in navigator) {
+				window.addEventListener('load', function () {
+					navigator.serviceWorker.register('/sw.js');
+				});
+			}
 		</script>
 	</body>
 </html>

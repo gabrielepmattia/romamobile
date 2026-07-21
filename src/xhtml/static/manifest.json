@@ -1,0 +1,45 @@
+{
+	"name": "Roma mobile",
+	"short_name": "Roma mobile",
+	"description": "Tempi di attesa dei mezzi e calcolo percorso a Roma, con dati in tempo reale",
+	"lang": "it",
+	"dir": "ltr",
+	"start_url": "/",
+	"scope": "/",
+	"display": "standalone",
+	"orientation": "portrait-primary",
+	"background_color": "#ffffff",
+	"theme_color": "#f84f00",
+	"icons": [
+		{
+			"src": "/xhtml/s/img/icon-192.png",
+			"sizes": "192x192",
+			"type": "image/png",
+			"purpose": "any"
+		},
+		{
+			"src": "/xhtml/s/img/icon-512.png",
+			"sizes": "512x512",
+			"type": "image/png",
+			"purpose": "any"
+		},
+		{
+			"src": "/xhtml/s/img/favicon.png",
+			"sizes": "240x240",
+			"type": "image/png"
+		}
+	],
+	"shortcuts": [
+		{
+			"name": "Fermate vicine",
+			"short_name": "Vicine",
+			"description": "Trova le fermate intorno a te",
+			"url": "/?vicine=1"
+		},
+		{
+			"name": "Metropolitane",
+			"short_name": "Metro",
+			"url": "/metro"
+		}
+	]
+}

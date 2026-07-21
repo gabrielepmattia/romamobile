@@ -105,6 +105,15 @@
 	</div>
 	
 	<h2 class="vskip">{% trans "Tempi di attesa bus e calcola percorso" %}</h2>
+
+	{# Mostrato via JS solo se il browser sa geolocalizzare: senza JS resta invisibile #}
+	<div id="vicine" style="display: none;">
+		<p>
+			<input type="button" id="vicine-btn" value="&#128205; {% trans "Fermate vicine a me" %}" />
+			<span id="vicine-stato"></span>
+		</p>
+	</div>
+
 	<form id="cerca" method="get" {{ formaction }}>
 		<p>
 			<span class="b">{% trans "Sono qui" %}</span> ({% trans "indirizzo, fermata o linea" %}):<br />
@@ -163,9 +172,61 @@
 				<img class="icon" height="24" width="24" src="{{ i.nome }}/s/img/icon.png" alt="*" />
 				<span class="i middle">{{ i.descrizione }}</span>
 			{% endif %}
-			</div>				
+			</div>
 		{% endif %}
 	{% endfor %}
+
+	<script>
+		/*
+		 * "Fermate vicine a me": prende la posizione dal browser e la passa alla
+		 * ricerca gia' esistente, che accetta il formato punto:(lat,lng) e
+		 * risponde con le fermate ordinate per distanza a piedi.
+		 * Vanilla ES5: in queste pagine non c'e' nessuna libreria JS caricata.
+		 */
+		(function () {
+			if (!navigator.geolocation) {
+				return;  // niente geolocalizzazione: il blocco resta nascosto
+			}
+			var blocco = document.getElementById('vicine');
+			var bottone = document.getElementById('vicine-btn');
+			var stato = document.getElementById('vicine-stato');
+			blocco.style.display = '';
+
+			function messaggio(testo) {
+				stato.innerHTML = ' ' + testo;
+			}
+
+			function cerca() {
+				bottone.disabled = true;
+				messaggio('{% filter escapejs %}{% trans "Cerco la tua posizione…" %}{% endfilter %}');
+				navigator.geolocation.getCurrentPosition(
+					function (pos) {
+						messaggio('{% filter escapejs %}{% trans "Trovata, carico le fermate…" %}{% endfilter %}');
+						var q = 'punto:(' + pos.coords.latitude.toFixed(6) + ',' + pos.coords.longitude.toFixed(6) + ')';
+						window.location.href = '/paline/?cerca=' + encodeURIComponent(q);
+					},
+					function (err) {
+						bottone.disabled = false;
+						if (err.code === err.PERMISSION_DENIED) {
+							messaggio('{% filter escapejs %}{% trans "Permesso negato: autorizza la posizione nel browser." %}{% endfilter %}');
+						} else if (err.code === err.TIMEOUT) {
+							messaggio('{% filter escapejs %}{% trans "Posizione non trovata in tempo, riprova." %}{% endfilter %}');
+						} else {
+							messaggio('{% filter escapejs %}{% trans "Posizione non disponibile." %}{% endfilter %}');
+						}
+					},
+					{enableHighAccuracy: true, timeout: 10000, maximumAge: 30000}
+				);
+			}
+
+			bottone.onclick = cerca;
+
+			/* Scorciatoia "Fermate vicine" dell'app installata: /?vicine=1 parte da sola */
+			if (window.location.search.indexOf('vicine=1') !== -1) {
+				cerca();
+			}
+		})();
+	</script>
 
 {% endblock %}
 
