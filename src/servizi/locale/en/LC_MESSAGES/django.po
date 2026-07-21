@@ -286,6 +286,30 @@ msgstr "Map"
 msgid "Servizi in tempo reale"
 msgstr "Real-time services"
 
+#: templates/servizi_new.html
+msgid "Fermate vicine a me"
+msgstr "Stops near me"
+
+#: templates/servizi_new.html
+msgid "Cerco la tua posizione…"
+msgstr "Finding your location…"
+
+#: templates/servizi_new.html
+msgid "Trovata, carico le fermate…"
+msgstr "Found it, loading stops…"
+
+#: templates/servizi_new.html
+msgid "Permesso negato: autorizza la posizione nel browser."
+msgstr "Permission denied: allow location access in your browser."
+
+#: templates/servizi_new.html
+msgid "Posizione non trovata in tempo, riprova."
+msgstr "Could not get your location in time, please try again."
+
+#: templates/servizi_new.html
+msgid "Posizione non disponibile."
+msgstr "Location unavailable."
+
 #~ msgid "Servizi"
 #~ msgstr "Services"
 
