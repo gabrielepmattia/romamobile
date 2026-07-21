@@ -12,7 +12,6 @@ ipython==4.1.2
 lxml==3.3.3
 marisa-trie==0.7.2
 Markdown
-paramiko==1.16.0
 protobuf==3.11.2
 psycopg2-binary==2.8.6
 ptyprocess==0.5.1
