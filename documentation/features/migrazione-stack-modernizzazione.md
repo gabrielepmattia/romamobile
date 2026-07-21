@@ -322,6 +322,30 @@ test manuali) è a carico dell'ambiente di deploy dopo ogni batch.
     (con i casi limite: `-1`, capolinea, partenza sconosciuta, pareggi) e ottiene
     ordinamenti identici.
 
+- **Fase 1 · batch 5 — moduli stdlib rinominati.** Stesso approccio del batch 2
+  (`try/except ImportError`, nessuna dipendenza nuova): `xmlrpclib` →
+  `xmlrpc.client` (10 file), `SocketServer` → `socketserver`, `urllib2` →
+  `urllib.request` (alias: `urlopen`, `Request`, `build_opener`, `ProxyHandler`,
+  `install_opener` vivono tutti lì), `urllib.urlencode`/`quote`/`unquote` e
+  `urlparse.parse_qs` → `urllib.parse` (importati per nome, visto che il modulo è
+  stato spezzato in due), `StringIO` di byte dbf → `io.BytesIO` (che esiste identico
+  su entrambe le versioni: nessuno shim), `iteratore.next()` → `next(iteratore)`.
+  - Rimossi 4 import già morti (`urllib2` in `paline/models.py`, `urllib` in
+    `osm.py` e `percorso/views.py`, `StringIO` e `quote` in `paline/views.py`).
+  - **Verifica aggiuntiva:** `pyflakes` (nel container `python:3.11-slim`, senza
+    aggiungerlo alle dipendenze) per intercettare i `NameError` latenti che un
+    import rimosso può lasciare — che né `compileall` né `check_imports` vedono:
+
+    ```
+    docker run --rm -v "$PWD/src:/src:ro" python:3.11-slim \
+      sh -c 'pip install -q pyflakes; cp -r /src /work && cd /work && python -m pyflakes .'
+    ```
+
+    Segnala gli stessi 6 nomi non definiti di prima del batch, tutti preesistenti:
+    `servizi/utils.py` (`current`), `servizi/crud.py` (`values`), `paline/jobs.py`
+    (`esci`), `paline/osm.py` (`raggiungibilita`), `paline/gtfs/realtime.py`
+    (`test_decode`), `romatpl_decoder.py` (`PORT`).
+
 ### Validazione deploy 2026-07-21 (`hetzner-4gb-1`)
 
 - Ambiente: `~/apps/_romamobile/repo/romamobile`, stack compose `romamobile`
