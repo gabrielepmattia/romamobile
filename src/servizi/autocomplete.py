@@ -19,6 +19,7 @@
 #    Roma mobile. If not, see http://www.gnu.org/licenses/.
 #
 
+from __future__ import print_function
 import marisa_trie as trie
 from collections import defaultdict
 from pprint import pprint
@@ -89,8 +90,8 @@ class AutocompleteEsri(object):
 			"f": "pjson",
 		})
 		out = []
-		print res.status_code
-		print res.text
+		print(res.status_code)
+		print(res.text)
 		for elem in res.json()['suggestions']:
 			t = elem['text']
 			out.append((-1, t))

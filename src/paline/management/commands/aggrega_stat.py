@@ -19,6 +19,7 @@
 #    Roma mobile. If not, see http://www.gnu.org/licenses/.
 #
 
+from __future__ import print_function
 from django.core.management.base import BaseCommand, CommandError
 from autenticazione.models import LogAutenticazioneServizi
 from log_servizi.models import Invocazione
@@ -39,7 +40,7 @@ class Command(BaseCommand):
 		else:
 			data = mysql2date(args[0])
 				
-		print data
+		print(data)
 				
 		aggrega_stat(data)
 	

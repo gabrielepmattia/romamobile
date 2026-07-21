@@ -21,6 +21,7 @@
 
 #import psyco
 #psyco.full()
+from __future__ import print_function
 import datetime
 import traceback
 import pyximport; pyximport.install()
@@ -336,7 +337,7 @@ def load_restrictions(file_name):
 		3: (False, True),
 	}
 	chrono()
-	print "Loading traffic restrictions"
+	print("Loading traffic restrictions")
 	dbf = Dbf()
 	dbf.openFile(file_name)
 	rs = {}
@@ -354,10 +355,10 @@ def load_restrictions(file_name):
 
 def load_from_shp(grafo, file_name, restrictions):
 	chrono()
-	print "Reading shapefile"
+	print("Reading shapefile")
 	sr = shapereader.ShapeReader(file_name)
 	chrono()
-	print "Building graph"
+	print("Building graph")
 	for e in sr:
 		punti, attr = e
 		eid = attr['ID']
@@ -425,7 +426,7 @@ def load_from_shp(grafo, file_name, restrictions):
 			)
 			grafo.add_arco(e1)
 			grafo.add_arco(e2)
-	print "Graph built"
+	print("Graph built")
 	chrono()
 
 
@@ -434,7 +435,7 @@ def chrono():
 	global chrono_old
 	now = datetime.now()
 	if chrono_old is not None:
-		print "Elapsed: %s" % (str(now - chrono_old),)
+		print("Elapsed: %s" % (str(now - chrono_old),))
 	chrono_old = now
 	
 id_via_ostiense = (11, 13800207392955L)
@@ -505,11 +506,11 @@ def parse_osm(graph, mini=False):
 		path = "paline/osm/map-%d.osm"		
 	
 	for i_for in range(1, rows + 1):
-		print "Parsing tree: i=%d" % i_for
+		print("Parsing tree: i=%d" % i_for)
 		tree = ET.parse(path % i_for)
-		print "Done"
+		print("Done")
 		
-		print "Loading map"
+		print("Loading map")
 		root = tree.getroot()
 		
 		for k in root:
@@ -597,7 +598,7 @@ def parse_osm(graph, mini=False):
 									count += 1
 									graph.add_arco(e)
 								s = t
-			print "Done: %d nodes (%d duplicates), %d edges (%d duplicates)" % (len(graph.nodi), dupn, len(graph.archi), dupe)
+			print("Done: %d nodes (%d duplicates), %d edges (%d duplicates)" % (len(graph.nodi), dupn, len(graph.archi), dupe))
 
 
 def osm_to_pickle(retina=False):

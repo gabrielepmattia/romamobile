@@ -19,6 +19,7 @@
 #    Roma mobile. If not, see http://www.gnu.org/licenses/.
 #
 
+from __future__ import print_function
 from django.db import models
 from xmlrpclib import Fault
 import json
@@ -243,7 +244,7 @@ class ServerVersione(SimpleXMLRPCDispatcher):
 						raise errors.XMLRPC['XRE_DAILY_LIMIT']
 					if group_required is None:
 						return f(*args)
-					print "Autenticato, verifico gruppo"
+					print("Autenticato, verifico gruppo")
 					if type(group_required) not in [list, tuple, set]:
 						groups_required = [group_required]
 					else:
@@ -337,12 +338,12 @@ class ServerVersione(SimpleXMLRPCDispatcher):
 		"""
 		def decoratore(f):
 			nome_completo = str("%s%d_%s" % (self.versione.servizio.nome, self.numero_versione, nome))
-			print nome_completo
+			print(nome_completo)
 			jsonrpc_method(nome_completo)(self.togli_token(f))
 		return decoratore		
 
 	def metodo(self, nome, require_token=True, group_required=None, json=True, cost=1):
-		print "Registro", nome
+		print("Registro", nome)
 		def decoratore(f):
 			if json and not group_required:
 				self.jsonrpc(nome)(f)

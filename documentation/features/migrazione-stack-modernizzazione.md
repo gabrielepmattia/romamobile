@@ -100,7 +100,10 @@ stack attuale (Py2/Django1.5).
 
 - [ ] Sostituire le dipendenze morte con equivalenti Py3-compatibili (tabella sopra).
 - [ ] Automatizzare le trasformazioni meccaniche (`futurize`/`2to3` mirati):
-      `print`, `iteritems`, `has_key`, `xrange`, `except X, e`.
+  - [x] `print` statement → `print()` funzione + `from __future__ import print_function`
+        (40 file backend; frontend `percorso/js/` escluso, è Fase 3).
+  - [ ] `iteritems` / `itervalues` / `has_key` / `xrange`
+  - [ ] `except X, e:` → `except X as e:`
 - [ ] Normalizzare `cPickle`→`pickle` (via `six.moves`), `Queue`→`queue`.
 - [ ] Affrontare a mano i punti str/bytes/`unicode` e i `cmp=` (→ `key=`).
 - [ ] Ricompilare le estensioni `.pyx` con Cython moderno; correggere le differenze
@@ -180,3 +183,28 @@ Fase 0 (test)  →  Fase 1 (Py3)  →  Fase 2 (Django LTS)
                         └── Fase 3 (frontend) in parallelo
                                              └── Fase 4 (routing) opzionale, data-driven
 ```
+
+---
+
+## 7. Diario di avanzamento
+
+Log cronologico di ogni batch di modifiche. Ogni voce è un commit isolato e
+reversibile. La validazione runtime (avvio stack Docker su Py2 attuale + smoke
+test manuali) è a carico dell'ambiente di deploy dopo ogni batch.
+
+### 2026-07-21
+
+- **Bugfix pre-migrazione** — `500` su `/metro` e ricerca linee quando gli alert
+  GTFS non sono disponibili (`gtfs_alerts is None`). Guardia in
+  `paline/trovalinea.py` + `try/except` su `read_alerts()` in `paline/tpl.py`.
+  _(commit separato, non parte della migrazione ma sbloccante.)_
+- **Fase 1 · batch 1 — `print` statement → funzione.** Convertiti tutti i `print`
+  del backend a `print(...)` con `from __future__ import print_function` per
+  restare compatibili Py2 **e** Py3. 40 file toccati. Escluso il frontend
+  `percorso/js/` (pyjs, Fase 3) e il generato `gtfs_pb2.py`.
+  - Note: corretto un BOM UTF-8 in `mercury/management/commands/jobs.py` e
+    `run_job.py` che confondeva il posizionamento del future-import.
+  - Verifica: `lib2to3 -f print` sull'intero backend non segnala più alcuno
+    statement da convertire né ParseError.
+  - ⚠️ Da validare nel deploy: riavvio `giano` + smoke test su `/metro`,
+    ricerca linee, cerca percorso.

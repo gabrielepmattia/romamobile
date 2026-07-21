@@ -20,6 +20,7 @@
 #
 
 
+from __future__ import print_function
 from django.core.management.base import BaseCommand, CommandError
 from optparse import make_option
 import settings
@@ -74,14 +75,14 @@ class Command(BaseCommand):
 		t = datetime2time(n)
 		
 		for nome in args:		
-			print "Orchestro demone ", nome
+			print("Orchestro demone ", nome)
 			sc = DaemonControl.objects.get(name=nome)
 			if options['set_action_r']:
 				sc.action = 'R'
 				sc.save()
 			ss_istanziati = sc.daemon_set.all()
 			if options['forza_riavvio']:
-				print "Forzo riavvio"
+				print("Forzo riavvio")
 				ss_pronti = ss_istanziati
 			else:
 				ss_pronti = ss_istanziati.filter(
@@ -98,7 +99,7 @@ class Command(BaseCommand):
 				
 			if sc.action == 'S':
 				for s in ss_istanziati:
-					print "Chiudo il processo ", sc.name, s.pid
+					print("Chiudo il processo ", sc.name, s.pid)
 					try:
 						os.kill(s.pid, signal.SIGTERM)
 					except Exception:
@@ -120,7 +121,7 @@ class Command(BaseCommand):
 						for i in range(min(numero_riavvi, len(ss_scaduti))):
 							s = ss_scaduti[i]
 							if s.action == 'R' or sc.restart_from <= t <= sc.restart_to or not s.ready:
-								print "Chiudo il processo ", sc.name, s.pid
+								print("Chiudo il processo ", sc.name, s.pid)
 								try:
 									os.kill(s.pid, signal.SIGTERM)
 								except Exception:
@@ -130,7 +131,7 @@ class Command(BaseCommand):
 									
 				# Istanzio i server richiesti, fino a raggiungere il numero previsto
 				for i in range(max(0, sc.instances - len(ss_istanziati) + server_chiusi)):
-					print "Lancio: ", sc.command
+					print("Lancio: ", sc.command)
 					p = subprocess.Popen(sc.command.split())
 					Daemon(
 						control=sc,

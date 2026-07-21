@@ -1,5 +1,6 @@
 #!/usr/local/bin/python
 #
+from __future__ import print_function
 '''\
 access a dbf file (read access works, write *might* work)
 mocons.persist.dbf.py
@@ -623,12 +624,12 @@ def demo1():
 	dbf1 = Dbf()
 	dbf1.openFile('county.dbf', readOnly=1)
 	dbf1.reportOn()
-	print 'sample records:'
+	print('sample records:')
 	for i1 in range(min(3,len(dbf1))):
 		rec = dbf1[i1]
 		for fldName in dbf1.fieldNames():
-			print '%s:\t %s'%(fldName, rec[fldName])
-		print
+			print('%s:\t %s'%(fldName, rec[fldName]))
+		print()
 	dbf1.close()
 
 if (__name__=='__main__'):

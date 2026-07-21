@@ -20,6 +20,7 @@
 #
 
 
+from __future__ import print_function
 from django.db import models, reset_queries
 import rpyc
 from rpyc.utils.server import ThreadedServer
@@ -216,12 +217,12 @@ class Peer(models.Model):
 	@contextmanager
 	def get_queue(self):
 		try:
-			print "Acquisico coda"
+			print("Acquisico coda")
 			self.queue_length = F('queue_length') + 1
 			self.save()
 			yield
 		finally:
-			print "Rilascio coda"
+			print("Rilascio coda")
 			self.queue_length = F('queue_length') - 1
 			self.save()
 
@@ -373,22 +374,22 @@ class Watchdog(Thread):
 	def run(self):
 		while True:
 			sleep(10)
-			print "Watchdog cycle"
+			print("Watchdog cycle")
 			ss = Peer.get_receivers_static(self.name)
 			for s in ss:
 				try:
-					print "Testing"
+					print("Testing")
 					c = rpyc.connect(s.host, s.port, config=config)
 					assert(c.root.ping() == 'OK')
 					c.close()
-					print "Test ok"
+					print("Test ok")
 				except Exception, e:
-					print e
-					print "Test KO"
+					print(e)
+					print("Test KO")
 					if s.daemon is not None:
 						s.daemon.action = 'R'
 						s.daemon.save()
-					print "Restart scheduled"
+					print("Restart scheduled")
 
 
 class Mercury(Thread):
@@ -574,9 +575,9 @@ class Mercury(Thread):
 			self.queue.put(None)
 		
 	def run(self):
-		print "Server listening"
+		print("Server listening")
 		self.server.start()
-		print "Server closed"
+		print("Server closed")
 
 
 def autopickle(f):
@@ -640,21 +641,21 @@ class DaemonControl(models.Model):
 
 	@contextmanager
 	def suspend_all_daemons(self):
-		print "Closing existing daemons"
+		print("Closing existing daemons")
 		old_action = self.action
 		self.action = 'F'
 		self.save()
 		ss_istanziati = self.daemon_set.all()
 		for s in ss_istanziati:
-			print "Chiudo il processo ", self.name, s.pid
+			print("Chiudo il processo ", self.name, s.pid)
 			try:
 				os.kill(s.pid, signal.SIGTERM)
 			except Exception:
 				pass
 			s.delete()
-		print "All existing daemons closed"
+		print("All existing daemons closed")
 		yield
-		print "Restoring old daemon status"
+		print("Restoring old daemon status")
 		self.action = old_action
 		self.save()
 

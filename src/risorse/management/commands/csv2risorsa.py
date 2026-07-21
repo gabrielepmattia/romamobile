@@ -19,6 +19,7 @@
 #    Roma mobile. If not, see http://www.gnu.org/licenses/.
 #
 
+from __future__ import print_function
 from django.core.management.base import BaseCommand, CommandError
 from optparse import make_option
 import settings
@@ -79,7 +80,7 @@ def carsharing(row, geom):
 
 	
 def autorimessa(row, geom):
-	print row['nome']
+	print(row['nome'])
 	telefono = row['telefono'].strip()
 	indirizzo = "%s %s, %s" % (row['via'], row['civico'], row['comune'])
 	if len(telefono) > 0 and telefono[0] == '6':
@@ -172,10 +173,10 @@ class Command(BaseCommand):
 		i = 0
 		with transaction(debug=True):
 			if modello is not None and options['delete']:
-				print "Elimino vecchie istanze"
+				print("Elimino vecchie istanze")
 				for o in modello.objects.all():
 					o.delete()
-			print "Importo nuove istanze"
+			print("Importo nuove istanze")
 			headers = None
 			if options['geocode']:
 				with open(csvfile, 'r') as f:
@@ -187,7 +188,7 @@ class Command(BaseCommand):
 							for row in reader:
 								row = {k: row[k].strip() for k in row}
 								i += 1
-								print "Riga #%d" % i
+								print("Riga #%d" % i)
 								error = False
 								try:
 									if geo is not None:
@@ -197,13 +198,13 @@ class Command(BaseCommand):
 									res = infopoint.geocode_place(None, indirizzo)
 									if res['stato'] != 'OK':
 										pprint(res)
-										print "Errore di geocoding"
+										print("Errore di geocoding")
 										error = True
 									else:
 										row.update({'x': str(res['x']), 'y': str(res['y'])})
 										geo_writer.writerow(row)
 								except Exception, e:
-									print "Eccezione"
+									print("Eccezione")
 									traceback.print_exc()
 									error = True
 								if error:
@@ -218,7 +219,7 @@ class Command(BaseCommand):
 						for row in reader:
 							row = {k: row[k].strip() for k in row}
 							i += 1
-							print "Riga #%d" % i
+							print("Riga #%d" % i)
 							error = False
 							try:
 								if options['wgs84']:

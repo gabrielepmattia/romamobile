@@ -20,6 +20,7 @@
 #
 
 
+from __future__ import print_function
 from datetime import date, time, datetime, timedelta
 import logging
 import math
@@ -141,8 +142,8 @@ class FVPath(object):
 			#print "Internal weight:", w
 		if weight > 0:
 			if cnt < 0:
-				print "ERRORE! VELOCITA' NEGATIVA!"
-				print cnt
+				print("ERRORE! VELOCITA' NEGATIVA!")
+				print(cnt)
 			#print "Calcolata velocita':", cnt/weight, weight
 			return (cnt / weight, weight)
 		else:

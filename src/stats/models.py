@@ -19,6 +19,7 @@
 #    Roma mobile. If not, see http://www.gnu.org/licenses/.
 #
 
+from __future__ import print_function
 from django.db import models, connections, transaction
 from datetime import date, time, datetime, timedelta
 from servizi.utils import datetime2date, date2datetime, dateandtime2datetime, dictfetchall
@@ -60,11 +61,11 @@ def generic_batched_dbrotate(
 	while not esci:
 		if dont_filter_timestamp:
 			sql = "select * from " + table_s + " order by id limit " + str(batch_size)
-			print sql
+			print(sql)
 			cursor.execute(sql)
 		else:
 			sql = "select * from " + table_s + " where " + ts_field + " <= %s order by id limit " + str(batch_size)
-			print sql
+			print(sql)
 			cursor.execute(sql, cutoff_date)
 		els = dictfetchall(cursor)
 
@@ -86,7 +87,7 @@ def generic_batched_dbrotate(
 			if dont_filter_timestamp and date > cutoff_date:
 				esci = True
 
-		print "Moving elements up to id %d" % max_id
+		print("Moving elements up to id %d" % max_id)
 
 		for ts in tss:
 			table = "%(table)s_%(year)d_%(month)d" % {
@@ -103,7 +104,7 @@ def generic_batched_dbrotate(
 			try:
 				cursor_t.execute(sql)
 			except Warning as w:
-				print w
+				print(w)
 
 		for d in els:
 			if map_callback is not None:
@@ -118,13 +119,13 @@ def generic_batched_dbrotate(
 			# print sql
 			cursor_t.execute(sql, d.values())
 
-		print "Deleting old elements"
+		print("Deleting old elements")
 		sql = "delete from " + table_s + " where id <= %s"
 		# print sql
 		cursor.execute(sql, max_id)
-		print "Committing storico"
+		print("Committing storico")
 		transaction.commit(using="storico")
-		print "Committing live"
+		print("Committing live")
 		transaction.commit()
 
 		if job is not None:
@@ -175,7 +176,7 @@ def generic_dbrotate(conn_s, conn_t, table_s, table_t, cutoff_date, sql_create_f
 	try:
 		cursor_t.execute(sql)
 	except Warning as w:
-		print w
+		print(w)
 
 	for d in dictfetchall(cursor):
 

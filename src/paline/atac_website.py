@@ -1,6 +1,7 @@
 # coding: utf-8
 # Written by Luca Allulli
 
+from __future__ import print_function
 import requests
 from BeautifulSoup import BeautifulStoneSoup
 from pprint import pprint
@@ -12,7 +13,7 @@ def get_atac_buses_viaggiaconatac(id_palina):
 	fermate = soup.findAll('fermata')
 	out = []
 	for f in fermate:
-		print "Dentro"
+		print("Dentro")
 		linea = f.linea.text
 		msg = f.mesg.text.lower()
 		if "arrivo" in msg:

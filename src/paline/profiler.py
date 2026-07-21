@@ -19,6 +19,7 @@
 #    Roma mobile. If not, see http://www.gnu.org/licenses/.
 #
 
+from __future__ import print_function
 import pstats, cProfile, threading, rpyc
 from datetime import date, time, datetime, timedelta
 import percorso.views
@@ -136,14 +137,14 @@ class TestCaricoCP(threading.Thread):
 			'Via Igino Giordani 5'
 		]
 		random.shuffle(i)
-		print i[:2]
+		print(i[:2])
 		start = percorso.views.infopoint_to_cp(i[0])
 		stop = percorso.views.infopoint_to_cp(i[1])
 		c = Mercury.rpyc_connect_any_static(settings.MERCURY_WEB)
 		t1 = datetime.now()
-		print "Invoco %d" % self.n
+		print("Invoco %d" % self.n)
 		trs = c.root.calcola_percorso([start, stop], 1, True, True, True, True, pickle.dumps(datetime.now()), True)
-		print "Fatto %d" % self.n
+		print("Fatto %d" % self.n)
 
 #self, punti, piedi, bus, metro, fc, fr, pickled_date, bici=False, max_distanza_bici=5000, linee_escluse=None, auto=False, carpooling=False, carpooling_vincoli=None, teletrasporto=False):
 		
@@ -160,7 +161,7 @@ class TestCaricoOV(threading.Thread):
 			'Via Igino Giordani 5'
 		]
 		random.shuffle(i)
-		print i[:1]
+		print(i[:1])
 		start = percorso.views.infopoint_to_cp(i[0])
 
 		c = Mercury.rpyc_connect_any_static(settings.MERCURY_WEB)

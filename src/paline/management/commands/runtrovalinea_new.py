@@ -19,6 +19,7 @@
 #    Roma mobile. If not, see http://www.gnu.org/licenses/.
 #
 
+from __future__ import print_function
 from django.core.management.base import BaseCommand, CommandError
 import settings
 from mercury.models import *
@@ -62,7 +63,7 @@ class Command(BaseCommand):
 		if 'tr_percorsi' in args:
 			name = settings.MERCURY_GIANO_PERCORSI
 
-		print "Cerco demone " + name
+		print("Cerco demone " + name)
 		giano = PeerType.objects.get(name=name)
 		in_docker = 'in_docker' in commands
 		giano_daemon = Daemon.get_process_daemon(name, in_docker)
@@ -93,11 +94,11 @@ class Command(BaseCommand):
 		)
 		if not 'tr' in args:
 			try:
-				print "Richiedo serializzazione"
+				print("Richiedo serializzazione")
 				Trovalinea.rete.deserializza_dinamico_db()
-				print "Serializzazione richiesta effettuata"
+				print("Serializzazione richiesta effettuata")
 			except Exception, e:
-				print "Serializzazione richiesta fallita"
+				print("Serializzazione richiesta fallita")
 		
 		giano_daemon.set_ready()
 

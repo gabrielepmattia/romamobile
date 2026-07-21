@@ -20,6 +20,7 @@
 #
 
 # from xmlrpchandler import XMLRPCService, xmlrpcremote 
+from __future__ import print_function
 from collections import defaultdict
 from paline.models import *
 from log_servizi.models import ServerVersione, Versione
@@ -1367,7 +1368,7 @@ def get_rete(request, token):
 	"""
 	Restituisce l'ultima versione caricata della rete (struttura e shapefile)
 	"""
-	print "Carico file rete"
+	print("Carico file rete")
 	inizio_validita = datetime2compact(VersionePaline.attuale().inizio_validita)
 	path_rete = os.path.join(settings.TROVALINEA_PATH_RETE, inizio_validita)
 	f = open(os.path.join(path_rete, 'rete.zip'), 'rb')
@@ -1377,7 +1378,7 @@ def get_rete(request, token):
 	shp = f.read()
 	f.close()
 	
-	print "Restituisco rete"
+	print("Restituisco rete")
 	return {
 		'rete': xmlrpclib.Binary(rete),
 		'shp': xmlrpclib.Binary(shp),

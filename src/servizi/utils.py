@@ -20,6 +20,7 @@
 #
 
 
+from __future__ import print_function
 import uuid
 import hashlib
 from django.db.models import Max, Min, Q
@@ -1031,16 +1032,16 @@ def mostra_avanzamento(totale):
 		return "[{}] ".format(datetime2mysql(datetime.now()))
 	attuale = [0.0]
 	percentuale = [0]
-	print _now() + "0% ({} elementi)".format(totale)
+	print(_now() + "0% ({} elementi)".format(totale))
 	def _mostra_avanzamento():
 		attuale[0] += 1
 		p = int(100 * attuale[0] / totale)
 		if p != percentuale[0]:
 			percentuale[0] = p
-			print _now() + str(p) + "%"
+			print(_now() + str(p) + "%")
 	yield _mostra_avanzamento
 	if percentuale[0] != 100:
-		print _now() + "100%"
+		print(_now() + "100%")
 
 
 @contextmanager

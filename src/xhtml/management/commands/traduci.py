@@ -19,6 +19,7 @@
 #    Roma mobile. If not, see http://www.gnu.org/licenses/.
 #
 
+from __future__ import print_function
 from django.core.management.base import BaseCommand, CommandError
 import datetime 
 import os, os.path, sys
@@ -39,7 +40,7 @@ class Command(BaseCommand):
 		if len(args) == 0:			
 			for a in settings.XHTML_APPS:
 				if a not in EXCLUDED_APP:
-					print a
+					print(a)
 					os.chdir(a)
 					make_messages(all=True, extensions=extensions)
 					os.chdir('..')

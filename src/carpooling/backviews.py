@@ -1,4 +1,5 @@
 # Create your views here.
+from __future__ import print_function
 from carpooling.views import is_utente_carpooling
 from models import *
 from django.db import models, connections, transaction

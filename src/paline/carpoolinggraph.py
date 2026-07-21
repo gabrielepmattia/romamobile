@@ -20,6 +20,7 @@
 #
 
 
+from __future__ import print_function
 from datetime import date, time, datetime, timedelta
 import traceback
 from grafo import Nodo, Arco, Grafo
@@ -218,7 +219,7 @@ class ArcoCarPooling(Arco):
 		
 	
 def carica_percorsi(rete, dijkstra_pool, offerte_queryset):
-	print "Carico percorsi car pooling"
+	print("Carico percorsi car pooling")
 	grafo = dijkstra_pool.graph
 	for p in offerte_queryset:
 		#print p

@@ -19,6 +19,7 @@
 #    Roma mobile. If not, see http://www.gnu.org/licenses/.
 #
 
+from __future__ import print_function
 from django.core.management.base import BaseCommand, CommandError
 import settings
 from mercury.models import *
@@ -35,7 +36,7 @@ class Command(BaseCommand):
 
 	def handle(self, *args, **options):
 		port = int(args[0])
-		print "Proxy started"
+		print("Proxy started")
 		if len(args) > 1:
 			daemon = Daemon.get_process_daemon(args[1])
 			daemon.set_ready()

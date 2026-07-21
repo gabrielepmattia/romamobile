@@ -1,3 +1,4 @@
+from __future__ import print_function
 import socket
 import rpyc
 import traceback
@@ -90,5 +91,5 @@ class Command(BaseCommand):
 							pass
 
 			except Exception, e:
-				print traceback.format_exc()
+				print(traceback.format_exc())
 				sleep(5)

@@ -19,6 +19,7 @@
 #    Roma mobile. If not, see http://www.gnu.org/licenses/.
 #
 
+from __future__ import print_function
 from models import *
 from datetime import date, time, datetime, timedelta
 from django import forms
@@ -183,8 +184,8 @@ def offri_passaggio_tempo(request, pk_copia=None):
 	
 	if f.is_bound and 'Submit' in request.GET:
 		cd = f.data
-		print 'data mancante'
-		print cd
+		print('data mancante')
+		print(cd)
 		dt = datetime(int(cd['year']), int(cd['month']), int(cd['day']), int(cd['hour']), int(cd['minute']))
 		flessibilita_ant = int(cd['flessibilita_ant']) * 60
 		flessibilita_post = int(cd['flessibilita_post']) * 60

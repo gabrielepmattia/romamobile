@@ -20,6 +20,7 @@
 #
 
 
+from __future__ import print_function
 from dbf import *
 from datetime import date, time, datetime, timedelta 
 import sys
@@ -58,13 +59,13 @@ def lancia_processo_caricamento_rete():
 	p = subprocess.Popen(cmd.split())
 	
 def scarica_rete():
-	print "Autenticazione"
+	print("Autenticazione")
 	sa = xmlrpclib.Server('%s/ws/xml/autenticazione/1' % settings.WS_BASE_URL)
 	sp = xmlrpclib.Server('%s/ws/xml/paline/7' % settings.WS_BASE_URL)
 	token = sa.autenticazione.Accedi(settings.DEVELOPER_KEY, '')	
-	print "Download rete"
+	print("Download rete")
 	res = sp.paline.GetRete(token)['risposta']
-	print "Salvataggio rete"
+	print("Salvataggio rete")
 	try:
 		os.mkdir(os.path.join(settings.TROVALINEA_PATH_RETE, 'temp'))
 	except:
@@ -75,7 +76,7 @@ def scarica_rete():
 	f = open(os.path.join(settings.TROVALINEA_PATH_RETE, 'temp/shp.zip'), 'wb')
 	f.write(res['shp'].data)
 	f.close()
-	print "Rete scaricata"
+	print("Rete scaricata")
 
 
 def carica_rete_auto():
@@ -121,14 +122,14 @@ def carica_rete(no_load=False, no_validate=False):
 	if not no_validate:
 	# Validazione
 		try:
-			print "Validazione caricamento rete"
+			print("Validazione caricamento rete")
 			r = tpl.Rete()
 			r.carica(versione=versione)
-			print "Validazione distanza tratti percorso"
+			print("Validazione distanza tratti percorso")
 			out = r.valida_distanze()
 			if out != "":
 				raise Exception(out)
-			print "Validazione connessione rete a grafo"
+			print("Validazione connessione rete a grafo")
 			g = graph.Grafo()
 			tpl.registra_classi_grafo(g)
 			#tomtom.load_from_shp(g, 'C:\\Users\\allulll\\Desktop\\grafo\\cpd\\RM_nw%s' % ('_mini' if retina else ''))
@@ -136,7 +137,7 @@ def carica_rete(no_load=False, no_validate=False):
 			tpl.carica_rete_su_grafo(r, g, False, versione=versione)
 		
 		except Exception, e:
-			print "Validazione fallita"
+			print("Validazione fallita")
 			traceback.print_exc()
 			v = VersionePaline.objects.ultima()
 			v.attiva = False
@@ -144,7 +145,7 @@ def carica_rete(no_load=False, no_validate=False):
 			transaction.commit()
 			raise e
 
-	print "Rete aggiornata con successo"
+	print("Rete aggiornata con successo")
 	return versione
 
 
@@ -157,10 +158,10 @@ def carica_rete_incrementale(no_load=False, no_validate=False):
 	if not no_load:
 		base = os.path.join(settings.TROVALINEA_PATH_RETE, '%s/rete' % datetime2compact(versione))
 		path = lambda f: os.path.join(base, f)
-		print "---Carico versione precedente di rete"
+		print("---Carico versione precedente di rete")
 		rete_base = tpl.Rete()
 		rete_base.carica()
-		print "---Estendo validità rete attuale"
+		print("---Estendo validità rete attuale")
 		generaRete(versione)
 		Carteggio.extend_to_current_version()
 		Palina.extend_to_current_version()
@@ -168,7 +169,7 @@ def carica_rete_incrementale(no_load=False, no_validate=False):
 		Linea.extend_to_current_version()
 		Percorso.extend_to_current_version()
 		Fermata.extend_to_current_version()
-		print "---Carico elementi nuovi o modificati"
+		print("---Carico elementi nuovi o modificati")
 		caricaCarteggi(path(carteggiFile), sovrascrivi=True)
 		caricaPaline(path(palineFile), sovrascrivi=True)
 		caricaGestori(path(gestoriFile), sovrascrivi=True)
@@ -178,19 +179,19 @@ def carica_rete_incrementale(no_load=False, no_validate=False):
 		attivaNuovaRete()
 		transaction.commit()
 		db.reset_queries()
-		print "---Carico nuovi elementi geografici"
+		print("---Carico nuovi elementi geografici")
 
 	if not no_validate:
 	# Validazione
 		try:
-			print "Validazione caricamento rete"
+			print("Validazione caricamento rete")
 			r = tpl.Rete()
 			r.carica(versione=versione, rete_base=rete_base)
-			print "Validazione distanza tratti percorso"
+			print("Validazione distanza tratti percorso")
 			out = r.valida_distanze()
 			if out != "":
 				raise Exception(out)
-			print "Validazione connessione rete a grafo"
+			print("Validazione connessione rete a grafo")
 			g = graph.Grafo()
 			tpl.registra_classi_grafo(g)
 			#tomtom.load_from_shp(g, 'C:\\Users\\allulll\\Desktop\\grafo\\cpd\\RM_nw%s' % ('_mini' if retina else ''))
@@ -198,14 +199,14 @@ def carica_rete_incrementale(no_load=False, no_validate=False):
 			tpl.carica_rete_su_grafo(r, g, False, versione=versione)
 
 		except Exception, e:
-			print "Validazione fallita"
+			print("Validazione fallita")
 			traceback.print_exc()
 			v = VersionePaline.objects.ultima()
 			v.attiva = False
 			v.save()
 			transaction.commit()
 			raise e
-	print "Rete aggiornata con successo"
+	print("Rete aggiornata con successo")
 	return versione
 
 
@@ -286,7 +287,7 @@ def generateColumnExtractor(description):
 def caricaCarteggi(carteggiFile, in_memoria=False, sovrascrivi=False):
 	dbf = Dbf()
 	dbf.openFile(carteggiFile)
-	print "Carico carteggi"
+	print("Carico carteggi")
 	cs = {}
 	for row in dbf:
 		if not in_memoria:
@@ -306,7 +307,7 @@ def caricaPaline(palineFile, in_memoria=False, sovrascrivi=False):
 	dbf = Dbf()
 	dbf.openFile(palineFile)
 	ps = []
-	print "Carico paline"
+	print("Carico paline")
 	for row in dbf:
 		nome = row['NOME']
 		if not in_memoria:
@@ -339,7 +340,7 @@ def caricaPaline(palineFile, in_memoria=False, sovrascrivi=False):
 def caricaGestori(gestoriFile, sovrascrivi=False):
 	dbf = Dbf()
 	dbf.openFile(gestoriFile)
-	print "Carico gestori"
+	print("Carico gestori")
 	for row in dbf:
 		nome = row['GESTORE']
 		if sovrascrivi:
@@ -353,7 +354,7 @@ def caricaLinee(lineeFile, in_memoria=False, sovrascrivi=False):
 	dbf = Dbf()
 	dbf.openFile(lineeFile)
 	ls = {}
-	print "Carico linee"
+	print("Carico linee")
 	for row in dbf:
 		tipo = 'BU'
 		if row['FERR_CONCE'] == 'TRUE':
@@ -394,19 +395,19 @@ def caricaPercorsi(percorsiFile, descrizionePercorsiFile, in_memoria=False, line
 	dbf = Dbf()
 	dbf.openFile(descrizionePercorsiFile)
 	ps = []
-	print "Carico descrizione percorsi"
+	print("Carico descrizione percorsi")
 	descrizioni = {}
 	for row in dbf:
 		descrizioni[str(row['ID_PERCORS'])] = row['DESCRIZION']
 	# Carico percorsi		
 	percorsi_no_orario = {}
 	if percorsiNoOrariFile is not None:
-		print "Carico percorsi senza orario"
+		print("Carico percorsi senza orario")
 		dbf = Dbf()
 		dbf.openFile(percorsiNoOrariFile)
 		for row in dbf:
 			percorsi_no_orario[row['IDPERCORSO']] = row['NOTEUTENTE']
-	print "Carico percorsi e associazione carteggi"
+	print("Carico percorsi e associazione carteggi")
 	dbf = Dbf()
 	dbf.openFile(percorsiFile)	
 	for row in dbf:
@@ -473,7 +474,7 @@ def caricaFermate(fermateFile, in_memoria=False, sovrascrivi=False):
 	dbf = Dbf()
 	dbf.openFile(fermateFile)
 	fs = {}
-	print "Carico fermate"
+	print("Carico fermate")
 	for row in dbf:
 		if not in_memoria:
 			try:
@@ -503,26 +504,26 @@ def caricaFermate(fermateFile, in_memoria=False, sovrascrivi=False):
 
 
 def generaRete(inizio_validita):
-	print "Creazione nuova versione della rete..."
+	print("Creazione nuova versione della rete...")
 	v = VersionePaline.auto_create(inizio_validita)
 	v.save()
-	print "Creata versione %d" % v.numero
+	print("Creata versione %d" % v.numero)
 		
 def attivaNuovaRete():
-	print "Attivazione nuova rete..."
+	print("Attivazione nuova rete...")
 	v = VersionePaline.objects.ultima()
 	v.attiva = True
 	v.save()
 
 
 def scarica_orari_partenza_giorno(giorno):
-	print "Autenticazione"
+	print("Autenticazione")
 	sa = xmlrpclib.Server('%s/ws/xml/autenticazione/1' % settings.WS_BASE_URL)
 	sp = xmlrpclib.Server('%s/ws/xml/paline/7' % settings.WS_BASE_URL)
 	token = sa.autenticazione.Accedi(settings.DEVELOPER_KEY, '')
-	print "Download orari", giorno
+	print("Download orari", giorno)
 	os2 = sp.paline.GetPartenzeCapilinea(token, date2mysql(giorno))['risposta']
-	print "Aggiornamento orari nel database"
+	print("Aggiornamento orari nel database")
 	ok = 0
 	added = 0
 	deleted = 0
@@ -544,7 +545,7 @@ def scarica_orari_partenza_giorno(giorno):
 		for k in os1:
 			PartenzeCapilinea.objects.filter(id_percorso=k[0], orario_partenza=k[1]).delete()
 			deleted += 1
-	print "Aggiornamento completato: {} invariati, {} inseriti, {} eliminati".format(ok, added, deleted)
+	print("Aggiornamento completato: {} invariati, {} inseriti, {} eliminati".format(ok, added, deleted))
 
 
 def scarica_orari_partenza():
@@ -560,18 +561,18 @@ def scarica_orari_partenza():
 	giorni = set([0, 5, 6])
 	for gi in giorni:
 		g = cerca_giorno(gi)
-		print g
+		print(g)
 		scarica_orari_partenza_giorno(g)
 
 
 def scarica_stat_passaggi():
-	print "Autenticazione"
+	print("Autenticazione")
 	sa = xmlrpclib.Server('%s/ws/xml/autenticazione/1' % settings.WS_BASE_URL)
 	sp = xmlrpclib.Server('%s/ws/xml/paline/7' % settings.WS_BASE_URL)
 	token = sa.autenticazione.Accedi(settings.DEVELOPER_KEY, '')	
-	print "Download statistiche passaggi"
+	print("Download statistiche passaggi")
 	stat = sp.paline.GetStatPassaggi(token)['risposta']
-	print "Caricamento statistiche nel database"
+	print("Caricamento statistiche nel database")
 	with autotransaction():
 		StatPeriodoAggregazione.objects.all().delete()
 		StatTempoAttesaPercorso.objects.all().delete()

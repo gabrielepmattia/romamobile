@@ -19,6 +19,7 @@
 #    Roma mobile. If not, see http://www.gnu.org/licenses/.
 #
 
+from __future__ import print_function
 from servizi.unicode_csv import UnicodeDictWriter, UnicodeDictReader
 import os, os.path
 from paline import tpl
@@ -127,8 +128,8 @@ def routes(path, rete):
 							'MEC': '57B947',
 						}[id_linea[:3]]
 					except:
-						print "Routes: linea non trovata", id_linea
-						print p.id_linea
+						print("Routes: linea non trovata", id_linea)
+						print(p.id_linea)
 				elif p.tipo == 'TR':
 					route_type = 0
 				else:
@@ -204,16 +205,16 @@ def compute_trips(rete, grafo, dt, trips, stop_times, calendar):
 							# print "TUTTO OK!!!"
 							ok += 1
 						else:
-							print "Tempo -1", tp.s.id_fermata, tp.t.id_fermata
+							print("Tempo -1", tp.s.id_fermata, tp.t.id_fermata)
 							ko += 1
 					except:
 						traceback.print_exc()
-						print "Non trovato :-(", tp.s.id_fermata, tp.t.id_fermata
+						print("Non trovato :-(", tp.s.id_fermata, tp.t.id_fermata)
 						ko += 1
 					dist += tp.rete_tratto_percorsi.distanza()
 					fermata = tp.t
 					i += 1
-	print ok, ko
+	print(ok, ko)
 
 
 
@@ -299,22 +300,22 @@ def zipdir(path, zip):
 
 
 def _generate_gtfs(path, rete, grafo):
-	print "Agenzia"
+	print("Agenzia")
 	agency(path)
-	print "Fermate"
+	print("Fermate")
 	stops(path, rete)
-	print "Linee"
+	print("Linee")
 	routes(path, rete)
-	print "Corse"
+	print("Corse")
 	trips(path, rete, grafo)
-	print "Shape"
+	print("Shape")
 	shapes(path, rete)
 
 
 def generate_gtfs(filename, rete, grafo):
 	gtfs_dir = tempfile.mkdtemp()
 	_generate_gtfs(gtfs_dir, rete, grafo)
-	print "Compressing"
+	print("Compressing")
 	zipf = zipfile.ZipFile(filename, 'w', zipfile.ZIP_DEFLATED)
 	zipdir(gtfs_dir, zipf)
 	shutil.rmtree(gtfs_dir)

@@ -19,6 +19,7 @@
 #    Roma mobile. If not, see http://www.gnu.org/licenses/.
 #
 
+from __future__ import print_function
 from bt import AVLTree as Avl
 import pyximport; pyximport.install()
 from models import *
@@ -524,7 +525,7 @@ class RetePercorso(object):
 				).save()
 
 	def stampa_tempi(self):
-		print " *** Tempi percorso %s (linea %s) ***" % (self.id_percorso, self.id_linea)
+		print(" *** Tempi percorso %s (linea %s) ***" % (self.id_percorso, self.id_linea))
 		i = 0
 		for tp in self.tratti_percorso:
 			i += 1
@@ -532,7 +533,7 @@ class RetePercorso(object):
 			s = str(t.tempo_percorrenza)
 			#else:
 			#	s = str(t.tempo_percorrenza_interpolato) + " (I)"
-			print "%d - %s" % (i, s)
+			print("%d - %s" % (i, s))
 
 	def calcola_distanze(self):
 		self.tratti_percorso[0].s.distanza_da_partenza = 0
@@ -880,9 +881,9 @@ class ReteTrattoPercorsi(object):
 			#print "TRATTO, weight=", t.weight_tempo_percorrenza, t.tempo_percorrenza
 			if t.weight_tempo_percorrenza > 0:
 				if t.tempo_percorrenza < 0:
-					print "VELOCITA ARCO SINGOLO NEGATIVA", t.tempo_percorrenza, t.weight_tempo_percorrenza
+					print("VELOCITA ARCO SINGOLO NEGATIVA", t.tempo_percorrenza, t.weight_tempo_percorrenza)
 				if self.dist < 0:
-					print "DISTANZA NEGATIVA"
+					print("DISTANZA NEGATIVA")
 				cnt += t.weight_tempo_percorrenza
 				tot += t.weight_tempo_percorrenza * (self.dist / t.tempo_percorrenza)
 				#print "Considero la velocità: ", (self.dist / t.tempo_percorrenza)
@@ -891,7 +892,7 @@ class ReteTrattoPercorsi(object):
 			#print "La velocità media: ", velocita
 			self.tempo_percorrenza = self.dist / velocita
 			if self.tempo_percorrenza < 0:
-				print "TEMPO RISULTANTE < 0", self.tempo_percorrenza
+				print("TEMPO RISULTANTE < 0", self.tempo_percorrenza)
 			n = datetime.now()
 			self.ultimo_aggiornamento = n
 			if logging and settings.CPD_LOG_PER_STATISTICHE:
@@ -1144,15 +1145,15 @@ class ReteFermata(object):
 
 def analizza_percorso(pe):
 	for tp in pe.tratti_percorso:
-		print "Percorrenza arco: " + str(tp.rete_tratto_percorsi.tempo_percorrenza)
+		print("Percorrenza arco: " + str(tp.rete_tratto_percorsi.tempo_percorrenza))
 		f = tp.t
 		p = f.rete_palina
 		for a in f.arrivi:
 			idv = a['id_veicolo']
 			if idv in p.arrivi:
-				print "%s fermata %d: Differenza %s" % (str(idv), a['fermate'], str(a['tempo'] - p.arrivi[idv]['tempo']))
+				print("%s fermata %d: Differenza %s" % (str(idv), a['fermate'], str(a['tempo'] - p.arrivi[idv]['tempo'])))
 			else:
-				print "%s fermata %d: Bus non presente in palina" % (str(idv), a['fermate'])
+				print("%s fermata %d: Bus non presente in palina" % (str(idv), a['fermate']))
 
 
 class ReteTrattoPercorso(object):
@@ -1655,9 +1656,9 @@ class Rete(object):
 				elif t == 'Rete':
 					self.deserializza_dinamico_interno(r)
 				else:
-					print "Tipo %s non riconosciuto" % t
+					print("Tipo %s non riconosciuto" % t)
 			except Exception, e:
-				print e
+				print(e)
 
 	def deserializza_dinamico_veicoli(self, res):
 		for r in res:
@@ -1687,7 +1688,7 @@ class Rete(object):
 				elif t == 'Rete':
 					self.deserializza_dinamico_interno(r)
 			except Exception, e:
-				print e
+				print(e)
 
 		self.invalida_bus_obsoleti()
 
@@ -1759,7 +1760,7 @@ class Rete(object):
 	def add_fermata(self, id_fermata, id_palina, id_percorso):
 		f = ReteFermata(id_fermata, self.paline[id_palina], self.percorsi[id_percorso], self)
 		if id_fermata in self.fermate:
-			print "FERMATA DUPLICATA", id_fermata
+			print("FERMATA DUPLICATA", id_fermata)
 		self.fermate[id_fermata] = f
 		self.fermate_da_palina[(id_palina,id_percorso)] = f
 		return f
@@ -1800,12 +1801,12 @@ class Rete(object):
 
 	def aggiorna_arrivi(self, calcola_percorrenze=False, logging=False, aggiorna_arrivi=True, timeout=TIMEOUT_AGGIORNAMENTO_RETE):
 		if aggiorna_arrivi:
-			print "Aggiornamento arrivi!"
+			print("Aggiornamento arrivi!")
 			self.dati_da_gtfs_rt()
 			self.stat_percorsi = self.get_stat_percorsi()
-			print "Aggiornamento arrivi completato!!"
+			print("Aggiornamento arrivi completato!!")
 		if calcola_percorrenze:
-			print "Calcolo percorrenze archi"
+			print("Calcolo percorrenze archi")
 			for k in self.percorsi:
 				try:
 					#print "Processo percorso %s" % self.percorsi[k].id_percorso
@@ -1819,11 +1820,11 @@ class Rete(object):
 				except:
 					traceback.print_exc()
 			self.percorrenze_calcolate = True
-			print "Calcolo percorrenze completato"
-			print "Aggiorno alerts"
+			print("Calcolo percorrenze completato")
+			print("Aggiorno alerts")
 			try:
 				self.gtfs_alerts = alerts.read_alerts()
-				print "Alerts aggiornati"
+				print("Alerts aggiornati")
 			except Exception:
 				# Un feed alert irraggiungibile o malformato non deve
 				# interrompere il resto del ciclo di aggiornamento della rete
@@ -1839,9 +1840,9 @@ class Rete(object):
 		# 			p.veicoli[id_veicolo].log_su_db()
 		# print "Log posizione veicoli completato"
 		if logging:
-			print "Log tempi di attesa percorsi"
+			print("Log tempi di attesa percorsi")
 			self.log_tempi_attesa_percorsi()
-			print "Log tempi attesa percorsi completato"
+			print("Log tempi attesa percorsi completato")
 		self.ultimo_aggiornamento = datetime.now()
 
 	def invalida_bus_obsoleti(self):
@@ -1971,7 +1972,7 @@ class Rete(object):
 								if not a_capolinea:
 									percorso.fv.add(id_veicolo, timestamp, distanza_capolinea_finale)
 							else:
-								print "** Veicolo %s troppo distante, %f" % (id_veicolo, dist)
+								print("** Veicolo %s troppo distante, %f" % (id_veicolo, dist))
 								pprint(v)
 								filtrati += 1
 								da_eliminare = True
@@ -1999,7 +2000,7 @@ class Rete(object):
 				traceback.print_exc()
 				logging.error('Errore eliminazione posizione veicolo: %s' % traceback.format_exc())
 
-		print("Filtrati: ", filtrati)
+		print(("Filtrati: ", filtrati))
 
 	def costruisci_percorso_intersezione(self, id_percorso_1, id_percorso_2, id_percorso, id_linea, tipo, descrizione):
 		try:
@@ -2051,7 +2052,7 @@ class Rete(object):
 		except:
 			m = "Errore nella costruzione del percorso intersezione: %s" % traceback.format_exc()
 			logging.error(m)
-			print m
+			print(m)
 
 	def costruisci_indice_periodi_aggregazione(self):
 		# Inizializzazione indice
@@ -2113,7 +2114,7 @@ class Rete(object):
 		try:
 			f = open(rete_serializzata_file, 'rb')
 			res = pickle.loads(f.read())
-			print "Carico rete serializzata"
+			print("Carico rete serializzata")
 			for tipo, param in res['add']:
 				getattr(self, 'add_%s' % tipo)(*param)
 			for p in res['paline']:
@@ -2129,10 +2130,10 @@ class Rete(object):
 			f.close()
 
 		except IOError:
-			print "Costruisco rete da database"
+			print("Costruisco rete da database")
 			r = self
 			ser = []
-			print "Carico paline"
+			print("Carico paline")
 			if retina:
 				ps = Palina.objects.by_date(versione).filter(fermata__percorso__linea__id_linea__in=LINEE_MINI)
 			else:
@@ -2140,7 +2141,7 @@ class Rete(object):
 			for p in ps:
 				r.add_palina(p.id_palina, p.nome, p.soppressa, p.geom)
 				ser.append(('palina', (p.id_palina, p.nome, p.soppressa, p.geom)))
-			print "Carico percorsi"
+			print("Carico percorsi")
 			ps = Percorso.objects.by_date(versione).all()
 			if retina:
 				ps = Percorso.objects.by_date(versione).filter(linea__id_linea__in=LINEE_MINI)
@@ -2170,7 +2171,7 @@ class Rete(object):
 				for f in fs:
 					percorso_rete.frequenza[f.giorno_settimana][f.ora_inizio] = (f.frequenza, f.da_minuto, f.a_minuto)
 
-			print "Carico coordinate percorsi"
+			print("Carico coordinate percorsi")
 			tps = TrattoPercorsi.objects.by_date(versione).all().select_related()
 			for tp in tps:
 				try:
@@ -2185,13 +2186,13 @@ class Rete(object):
 					#print id_palina
 			for id_percorso in self.percorsi:
 				self.percorsi[id_percorso].set_punti()
-			print "Carico zone capilinea"
+			print("Carico zone capilinea")
 			self.assegna_zone_a_capilinea(versione_paline)
-			print "Carico statistiche"
+			print("Carico statistiche")
 			self.costruisci_indice_periodi_aggregazione()
 			self.carica_stat_percorrenze_archi()
 			self.carica_stat_attese_bus()
-			print "Serializzo rete"
+			print("Serializzo rete")
 			f = open(rete_serializzata_file, 'wb')
 			f.write(pickle.dumps({
 				'add': ser,
@@ -2202,29 +2203,29 @@ class Rete(object):
 				'indice_stat_periodi_aggregazione': self.indice_stat_periodi_aggregazione,
 			}, 2))
 			f.close()
-		print "Elaboro mapping fermate soppresse"
+		print("Elaboro mapping fermate soppresse")
 		for id_percorso in self.percorsi:
 			self.percorsi[id_percorso].init_mapping_fermate_non_soppresse()
-		print "Carico ZTL"
+		print("Carico ZTL")
 		today = date.today()
 		zs = orari_per_ztl(today, today + timedelta(days=settings.CPD_GIORNI_LOOKAHEAD))
 		for ztl_id in zs:
 			z = zs[ztl_id]
 			self.add_ztl(ztl_id, z['toponimo'], z['fasce'])
-		print "Calcolo distanze"
+		print("Calcolo distanze")
 		for id_percorso in self.percorsi:
 			try:
 				self.percorsi[id_percorso].calcola_distanze()
 			except:
-				print "Errore nel calcolo distanze sul percorso ", id_percorso
+				print("Errore nel calcolo distanze sul percorso ", id_percorso)
 				# traceback.print_exc()
-		print "Carico mapping GTFS"
+		print("Carico mapping GTFS")
 		d = {}
 		for gt in GtfsTrip.objects.all():
 			d[gt.trip_id] = gt.id_percorso
 		self.trip_to_id_percorso = d
 		db.reset_queries()
-		print "Init stat percorsi"
+		print("Init stat percorsi")
 		self.stat_percorsi = self.init_stat_percorsi()
 
 	def valida_distanze(self):
@@ -2242,7 +2243,7 @@ class Rete(object):
 		return ""
 
 	def carica_stat_percorrenze_archi(self):
-		print "Carico statistiche tempi di percorrenza archi"
+		print("Carico statistiche tempi di percorrenza archi")
 		spas = StatPeriodoAggregazione.objects.all()
 		n = len(self.indice_stat_periodi_aggregazione)
 		spazio = [0.0 for x in range(n)]
@@ -2276,7 +2277,7 @@ class Rete(object):
 				self.velocita_medie[i] = spazio[i] / tempo[i]
 
 	def carica_stat_attese_bus(self):
-		print "Carico statistiche tempi di attesa bus"
+		print("Carico statistiche tempi di attesa bus")
 		spas = StatPeriodoAggregazione.objects.all()
 		n = len(self.indice_stat_periodi_aggregazione)
 		for k in self.percorsi:
@@ -2481,13 +2482,13 @@ class Aggiornatore(Thread):
 					sleep(diff)
 			self.ultimo_aggiornamento = datetime.now()
 			try:
-				print "Inizio aggiornamento arrivi, ciclo {} su {}".format(self.ciclo_calcolo_percorrenze + 1, self.cicli_calcolo_percorrenze)
+				print("Inizio aggiornamento arrivi, ciclo {} su {}".format(self.ciclo_calcolo_percorrenze + 1, self.cicli_calcolo_percorrenze))
 				self.ciclo_calcolo_percorrenze = (self.ciclo_calcolo_percorrenze + 1) % self.cicli_calcolo_percorrenze
 				self.ciclo_logging = (self.ciclo_logging + 1) % self.cicli_logging
 				aggiorna_percorrenze = self.ciclo_calcolo_percorrenze == 0
 				self.rete.aggiorna_arrivi(aggiorna_percorrenze, self.ciclo_logging == 0, aggiorna_arrivi=self.aggiorna_arrivi)
 				self.ultimo_aggiornamento = datetime.now()
-				print "Fine aggiornamento arrivi"
+				print("Fine aggiornamento arrivi")
 				# print "Serializzazione"
 				# self.mercury.async_all_stored('deserializza_dinamico_veicoli_stored', self.rete.serializza_dinamico_veicoli(aggiorna_percorrenze))
 				# print "Serializzazione completata"
@@ -2505,7 +2506,7 @@ class Aggiornatore(Thread):
 
 			except Exception, e:
 				logging.error(traceback.format_exc())
-		print "Stoppato"
+		print("Stoppato")
 
 
 class AggiornatoreDownload(Thread):
@@ -2530,20 +2531,20 @@ class AggiornatoreDownload(Thread):
 		ciclo = 0
 		while not self.stopped:
 			try:
-				print "Verifico ora ultimo aggiornamento rete dinamica"
+				print("Verifico ora ultimo aggiornamento rete dinamica")
 				if token is None:
 					token = sa.autenticazione.Accedi(settings.DEVELOPER_KEY, '')
 				res = sp.paline.GetOrarioUltimoAggiornamentoArrivi(token)
 				ua = res['risposta']['ultimo_aggiornamento']
 				if ultimo_aggiornamento is None or ua > ultimo_aggiornamento:
-					print "Scarico ultimo aggiornamento"
+					print("Scarico ultimo aggiornamento")
 					res = sp.paline.GetStatoRete(token)['risposta']
 					ultimo_aggiornamento = res['ultimo_aggiornamento']
-					print "Deserializzo ultimo aggiornamento"
+					print("Deserializzo ultimo aggiornamento")
 					self.rete.deserializza_dinamico(pickle.loads(res['stato_rete'].data))
-					print "Rete dinamica aggiornata"
+					print("Rete dinamica aggiornata")
 					if settings.CPD_LOG_PER_STATISTICHE:
-						print "Log per statistiche"
+						print("Log per statistiche")
 						ciclo += 1
 						if ciclo >= self.cicli_logging:
 							ciclo = 0
@@ -2555,9 +2556,9 @@ class AggiornatoreDownload(Thread):
 							for id_percorso in self.rete.percorsi:
 								self.rete.percorsi[id_percorso].log_tempo_attesa(d, t)
 
-						print "Log effettuato"
+						print("Log effettuato")
 			except:
-				print "Errore aggiornamento rete dinamica"
+				print("Errore aggiornamento rete dinamica")
 				traceback.print_exc()
 				token = None
 			sleep(self.intervallo.seconds)
@@ -3235,7 +3236,7 @@ def carica_rete_su_grafo(r, g, retina=False, versione=None):
 	"""
 	Carica la rete del TPL all'interno del grafo g e aggiorna i link inversi
 	"""
-	print "Carico rete su grafo"
+	print("Carico rete su grafo")
 
 	registra_classi_grafo(g)
 
@@ -3270,7 +3271,7 @@ def carica_rete_su_grafo(r, g, retina=False, versione=None):
 				g.add_arco(a)
 			except KeyError:
 				# La palina è sparita dal feed: l'interscambio resta parziale
-				print "Nodo scambio: palina %s non trovata" % id_palina
+				print("Nodo scambio: palina %s non trovata" % id_palina)
 	# Fermate
 	fermata_teletrasporto = None
 	for k in r.fermate:
@@ -3344,7 +3345,7 @@ def carica_rete_su_grafo(r, g, retina=False, versione=None):
 			"""
 			# end teletrasporto
 	# Archi di distanza fra paline e grafo pedonale (osm)
-	print "Collego la rete del TPL alla rete stradale"
+	print("Collego la rete del TPL alla rete stradale")
 	if versione is None:
 		inizio_validita = datetime2compact(VersionePaline.attuale().inizio_validita)
 	else:
@@ -3356,7 +3357,7 @@ def carica_rete_su_grafo(r, g, retina=False, versione=None):
 	try:
 		g.deserialize(geocoding_file)
 	except IOError:
-		print "Necessario ricalcolo"
+		print("Necessario ricalcolo")
 		ps = [r.paline[k] for k in r.paline if not r.paline[k].soppressa]
 		dp = DijkstraPool(g, 1)
 		with dp.get_dijkstra() as dj:
@@ -3375,12 +3376,12 @@ def carica_rete_su_grafo(r, g, retina=False, versione=None):
 
 	if True: #not retina:
 		# Nodi luogo e connessione
-		print "Aggiungo e collego nodi luogo"
+		print("Aggiungo e collego nodi luogo")
 		for risorsa in risorse.modelli_risorse:
-			print risorsa.__name__
+			print(risorsa.__name__)
 			for a in risorsa.objects.all():
 				if a.geom is None:
-					print "No luogo: " + a.nome_luogo
+					print("No luogo: " + a.nome_luogo)
 				else:
 					n = NodoRisorsa(a)
 					g.add_nodo(n)
@@ -3389,11 +3390,11 @@ def carica_rete_su_grafo(r, g, retina=False, versione=None):
 						g.add_arco(a)
 
 		# Elimino archi rimossi da database
-		print "Elimino archi rimossi da database"
+		print("Elimino archi rimossi da database")
 		ars = ArcoRimosso.objects.filter(rimozione_attiva=True)
 		for a in ars:
 			try:
-				print a, a.eid
+				print(a, a.eid)
 				g.rm_arco(g.archi[a.eid])
 			except Exception, e:
 				logging.error(u'Arco rimosso %s non trovato', a.descrizione)
@@ -3518,7 +3519,7 @@ def calcola_frequenze(percorsi_da_rete=True):
 	giorni = set([0, 5, 6])
 	for gi in giorni:
 		g = cerca_giorno(gi)
-		print g
+		print(g)
 		calcola_frequenze_giorno(g, gi, percorsi_da_rete)
 
 
@@ -3530,10 +3531,10 @@ def elabora_statistiche(data_inizio, data_fine, min_weight=5, elabora_tempi_arch
 	stas = defaultdict(stas_init)
 	if elabora_tempi_archi:
 		StatTempoArcoNew.objects.all().delete()
-		print "Calcolo statistiche tempi percorrenza archi"
+		print("Calcolo statistiche tempi percorrenza archi")
 		d = data_inizio
 		while d <= data_fine:
-			print "[{}] ".format(datetime2mysql(datetime.now())) + str(d)
+			print("[{}] ".format(datetime2mysql(datetime.now())) + str(d))
 			wd = Festivita.get_weekday(d)
 			ltas = LogTempoArco.objects.filter(data=d)
 			for lta in batch_qs(ltas):
@@ -3558,7 +3559,7 @@ def elabora_statistiche(data_inizio, data_fine, min_weight=5, elabora_tempi_arch
 				).save()
 	if elabora_tempi_attesa:
 		StatTempoAttesaPercorsoNew.objects.all().delete()
-		print "Calcolo statistiche tempi attesa percorsi"
+		print("Calcolo statistiche tempi attesa percorsi")
 		ltas = LogTempoAttesaPercorso.objects.filter(data__gte=data_inizio, data__lte=data_fine)
 		stas = defaultdict(stas_init)
 		with mostra_avanzamento(ltas.count()) as conta:
@@ -3601,7 +3602,7 @@ class Avg(object):
 		self.tot += k
 
 	def aggiungi_percentuale(self, a1, a2):
-		print a1, a2
+		print(a1, a2)
 		diff = float(abs(a1 - a2))
 		self.aggiungi(diff / max((a1, a2)))
 		if self.min is None or diff < self.min:
@@ -3610,7 +3611,7 @@ class Avg(object):
 			self.max = diff
 
 	def media(self):
-		print self.tot, self.cnt
+		print(self.tot, self.cnt)
 		return float(self.tot) / float(self.cnt)
 
 	def media_percentuale(self):
@@ -3649,9 +3650,9 @@ def confronta_arrivi(paline):
 				t2 = a2['tempo']
 				if t1 != -1 and t2 != -1:
 					errore_tempo.aggiungi_percentuale(t1, t2)
-	print "Trovate: %d su %d" % (trov, tot)
-	print "Errore numero femate: %s" % errore_numero.get_statistiche()
-	print "Errore tempi attesa: %s" % errore_tempo.get_statistiche()
+	print("Trovate: %d su %d" % (trov, tot))
+	print("Errore numero femate: %s" % errore_numero.get_statistiche())
+	print("Errore tempi attesa: %s" % errore_tempo.get_statistiche())
 
 
 def _get_or_create_arco_percorrenza_treno(g, tratto_percorso_s, id_palina_t):
@@ -3694,7 +3695,7 @@ def carica_orari_fl_da_db(r, g):
 		t = time(h, int(m))
 		return t, d, dateandtime2datetime(today, t)
 
-	print "Carico orari FL"
+	print("Carico orari FL")
 
 	ots = OrarioTreno.objects.all()
 	for ot in ots:
@@ -3702,7 +3703,7 @@ def carica_orari_fl_da_db(r, g):
 		try:
 			if id_percorso in r.percorsi:
 				if id_percorso == 'RM73692':
-					print id_percorso, ot.giorno, ot.orari
+					print(id_percorso, ot.giorno, ot.orari)
 				p = r.percorsi[id_percorso]
 				day = ot.giorno
 				orari = ot.orari.split(",")
@@ -3718,14 +3719,14 @@ def carica_orari_fl_da_db(r, g):
 					aat = g.archi[(3, f1)]
 					apt, tp = _get_or_create_arco_percorrenza_treno(g, tp, id_paline[i + 1])
 					if id_percorso == 'RM73692':
-						print "Aggiunto arco ", apt
+						print("Aggiunto arco ", apt)
 					# apt = g.archi[(5, f1, f2)]
 					aat.aggiungi_partenza(t1, d1)
 					apt.aggiungi_partenza(t1, perc, d2)
 			else:
-				print "Percorso {} non trovato!".format(id_percorso)
+				print("Percorso {} non trovato!".format(id_percorso))
 		except BaseException as e:
-			print("Errore nel caricamento orari per percorso", id_percorso)
+			print(("Errore nel caricamento orari per percorso", id_percorso))
 			traceback.print_exc()
 
 
@@ -3736,7 +3737,7 @@ def test_ferrovia(r, g):
 			f = t.s
 			aat = g.archi[(3, f.id_fermata)]
 			apt = g.archi[(5, f.id_fermata, t.t.id_fermata)]
-			print f.id_fermata
+			print(f.id_fermata)
 			tod = date2datetime(date.today())
 			tom = tod + timedelta(days=1)
 			while tod < tom:
@@ -3762,7 +3763,7 @@ def salva_archi_tomtom_su_db(grafo, num=1, den=1):
 		for eid in grafo.archi:
 			i += 1
 			if i % 100 == 0:
-				print "%d%%" % int(100 * float(i) / n)
+				print("%d%%" % int(100 * float(i) / n))
 			if start <= i-1 and i-1 < stop and eid[0] == 12:
 				a = grafo.archi[eid]
 				s = a.to_model()
@@ -3790,7 +3791,7 @@ def analisi_velocita_archi(r, g, opz=None):
 					if v > d[tipo]:
 						d[tipo] = v
 					if v > 18:
-						print v, eid, e, e.s.rete_fermata.rete_palina.nome
+						print(v, eid, e, e.s.rete_fermata.rete_palina.nome)
 	return d
 
 
@@ -3816,7 +3817,7 @@ def grafo2shape(g, path, filename):
 				line = e.get_coordinate()
 				desc = ""
 				if e.id[0] != 12:
-					print eid, line
+					print(eid, line)
 				else:
 					desc = e.get_nome().encode('iso-8859-1')
 				shp_p.line(parts=[line])

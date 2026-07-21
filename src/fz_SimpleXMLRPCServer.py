@@ -1,3 +1,4 @@
+from __future__ import print_function
 """Simple XML-RPC Server.
 
 This module can be used to create simple XML-RPC servers
@@ -646,9 +647,9 @@ class CGIXMLRPCRequestHandler(SimpleXMLRPCDispatcher):
 
         response = self._marshaled_dispatch(request_text)
 
-        print 'Content-Type: text/xml'
-        print 'Content-Length: %d' % len(response)
-        print
+        print('Content-Type: text/xml')
+        print('Content-Length: %d' % len(response))
+        print()
         sys.stdout.write(response)
 
     def handle_get(self):
@@ -668,10 +669,10 @@ class CGIXMLRPCRequestHandler(SimpleXMLRPCDispatcher):
              'message' : message,
              'explain' : explain
             }
-        print 'Status: %d %s' % (code, message)
-        print 'Content-Type: %s' % BaseHTTPServer.DEFAULT_ERROR_CONTENT_TYPE
-        print 'Content-Length: %d' % len(response)
-        print
+        print('Status: %d %s' % (code, message))
+        print('Content-Type: %s' % BaseHTTPServer.DEFAULT_ERROR_CONTENT_TYPE)
+        print('Content-Length: %d' % len(response))
+        print()
         sys.stdout.write(response)
 
     def handle_request(self, request_text = None):
@@ -697,7 +698,7 @@ class CGIXMLRPCRequestHandler(SimpleXMLRPCDispatcher):
             self.handle_xmlrpc(request_text)
 
 if __name__ == '__main__':
-    print 'Running XML-RPC server on port 8000'
+    print('Running XML-RPC server on port 8000')
     server = SimpleXMLRPCServer(("localhost", 8000))
     server.register_function(pow)
     server.register_function(lambda x,y: x+y, 'add')

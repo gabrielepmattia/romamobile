@@ -1,4 +1,4 @@
-﻿# coding: utf-8
+# coding: utf-8
 
 #
 #    Copyright 2015-2016 Roma servizi per la mobilità srl
@@ -19,6 +19,7 @@
 #    Roma mobile. If not, see http://www.gnu.org/licenses/.
 #
 
+from __future__ import print_function
 from django.core.management.base import BaseCommand, CommandError
 from optparse import make_option
 import settings
@@ -81,12 +82,12 @@ class Command(BaseCommand):
 			module, function = name.split('.')
 			m = importlib.import_module("%s.jobs" % module)
 			status, message = getattr(m, function)(j)
-			print "Job %s completed" % name
+			print("Job %s completed" % name)
 			j.completed_ts = datetime.now()
 			j.last_status = status
 			j.last_message = message
 		except:
-			print "Exception while executing job %s" % name
+			print("Exception while executing job %s" % name)
 			j.last_status = -1
 			j.last_message = 'Exception caught by job handler: %s' % traceback.format_exc()
 

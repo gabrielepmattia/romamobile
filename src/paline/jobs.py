@@ -19,6 +19,7 @@
 #    Roma mobile. If not, see http://www.gnu.org/licenses/.
 #
 
+from __future__ import print_function
 from stats.models import get_data_limite
 from servizi.models import sospendi_servizi
 from paline.models import LogTempoArco, LogTempoAttesaPercorso, ArcoRimosso, VersionePaline
@@ -49,7 +50,7 @@ def _aggrega_stat_data(job=None, data=None):
 	"""
 	connection = connections['default']
 	cursor = connection.cursor()
-	print "Elaboro statistiche"
+	print("Elaboro statistiche")
 	cursor.execute('''
 		insert ignore into paline_logtempoarcoaggr(id_palina_s, id_palina_t, data, ora, tempo, peso)
 		select id_palina_s, id_palina_t, data, hour(ora) as ora, sum(peso*tempo)/sum(peso) as tempo, sum(peso) as peso
@@ -93,13 +94,13 @@ def elimina_file_rete_obsoleti(job=None):
 	fs = os.listdir(path)
 	fs = [f for f in fs if f.startswith('20')]
 	fs.sort()
-	print fs
+	print(fs)
 	fs = fs[:-RETI_DA_MANTENERE]
 	data_limite = (datetime.now() - timedelta(days=GIORNI_DA_MANTENERE)).strftime('%Y%m%d')
-	print "Cancello fino alla data limite: %s" % data_limite
+	print("Cancello fino alla data limite: %s" % data_limite)
 	for f in fs:
 		if f < data_limite:
-			print "Deleting %s" % f
+			print("Deleting %s" % f)
 			shutil.rmtree(os.path.join(path, f))
 
 	return (0, 'OK')
@@ -107,15 +108,15 @@ def elimina_file_rete_obsoleti(job=None):
 
 def _db_cleanup(job=None):
 	now = datetime.now()
-	print "Cleaning up old departures"
+	print("Cleaning up old departures")
 	PartenzeCapilinea.objects.filter(orario_partenza__lte=now - MANTIENI_GIORNI_PARTENZE).delete()
-	print "Cleaning up old sessions"
+	print("Cleaning up old sessions")
 	Session.objects.filter(expire_date__lte=now - MANTIENI_SESSIONI_SCADUTE).delete()
 	# connection = connections['default']
 	# cursor = connection.cursor()
 	# print "Vacuuming db"
 	# cursor.execute("vacuum")
-	print "Cleanup done"
+	print("Cleanup done")
 	return 0, "OK"
 
 
@@ -124,14 +125,14 @@ def db_cleanup(job=None):
 
 
 def scarica_rete_tpl(job=None):
-	print "Updating network from GTFS"
+	print("Updating network from GTFS")
 	try:
-		print "Loading last update time"
+		print("Loading last update time")
 		last_update = VersionePaline.attuale().inizio_validita
 	except:
-		print "Error while loading last update time, starting from scratch"
+		print("Error while loading last update time, starting from scratch")
 		last_update = None
-	print "Suspending Giano daemons"
+	print("Suspending Giano daemons")
 	dc = DaemonControl.objects.get(name=settings.MERCURY_GIANO)
 	code = '0'
 	msg = ''
@@ -145,6 +146,6 @@ def scarica_rete_tpl(job=None):
 			except:
 				code = -1
 				msg = traceback.format_exc()
-	print "Updating network from GTFS: done", code, msg
+	print("Updating network from GTFS: done", code, msg)
 	return code, msg
 

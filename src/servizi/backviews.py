@@ -19,6 +19,7 @@
 #    Roma mobile. If not, see http://www.gnu.org/licenses/.
 #
 
+from __future__ import print_function
 from models import *
 from django.db import models, connections, transaction
 from django.db.models import Q
@@ -125,7 +126,7 @@ def _servizi_app_init(request, session_or_token, urlparams):
 
 	old_user = request.user
 
-	print "Input session key:", session_or_token
+	print("Input session key:", session_or_token)
 
 	# Logout and clear session
 	if session_or_token == '-':

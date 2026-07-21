@@ -21,6 +21,7 @@
 
 #import psyco
 #psyco.full()
+from __future__ import print_function
 import datetime
 import urllib
 import urllib2
@@ -310,7 +311,7 @@ class ArcoOsm(Arco):
 
 
 def save_graph(grafo, file_name):
-	print "Saving graph in proprietary format..."
+	print("Saving graph in proprietary format...")
 	f = open(file_name, "w")
 	f.write("%d\n" % (len(grafo.nodi),))
 	for n in grafo.nodi:
@@ -319,10 +320,10 @@ def save_graph(grafo, file_name):
 	for e in grafo.archi:
 		grafo.archi[e].save(f)
 	f.close()
-	print "Done"
+	print("Done")
 	
 def load_graph(grafo, file_name):
-	print "Loading graph from proprietary format..."
+	print("Loading graph from proprietary format...")
 	f = codecs.open(file_name, "r", 'utf-8')
 	l = int(f.readline().strip())
 	for i in xrange(0, l):
@@ -331,7 +332,7 @@ def load_graph(grafo, file_name):
 	for i in xrange(0, l):
 		ArcoOsm.load(grafo, f)
 	f.close()
-	print "Done"
+	print("Done")
 
 
 		
@@ -342,11 +343,11 @@ def parse_osm(graph, rows):
 	dupe = 0
 	
 	for i_for in range(1, rows + 1):
-		print "Parsing tree: i=%d" % i_for
+		print("Parsing tree: i=%d" % i_for)
 		tree = ET.parse("paline/osm/map-%d.osm" % i_for)
-		print "Done"
+		print("Done")
 		
-		print "Loading map"
+		print("Loading map")
 		root = tree.getroot()
 		
 		for k in root:
@@ -404,7 +405,7 @@ def parse_osm(graph, rows):
 									count += 1
 									graph.add_arco(e)
 								s = t
-			print "Done: %d nodes (%d duplicates), %d edges (%d duplicates)" % (len(graph.nodi), dupn, len(graph.archi), dupe)
+			print("Done: %d nodes (%d duplicates), %d edges (%d duplicates)" % (len(graph.nodi), dupn, len(graph.archi), dupe))
 
 
 def retrieve(left, bottom, right, top, rows, columns, start=1):
@@ -412,7 +413,7 @@ def retrieve(left, bottom, right, top, rows, columns, start=1):
 	width = (right - left) / columns
 	for i in xrange(0, rows):
 		for j in xrange(0, columns):
-			print "i=%d, j=%d" % (i, j)
+			print("i=%d, j=%d" % (i, j))
 			s = bottom + i * height
 			n = s + height
 			w = left + j * width
@@ -424,16 +425,16 @@ def retrieve(left, bottom, right, top, rows, columns, start=1):
 def retrieve2(left, bottom, right, top, start=0):
 	try:
 		f = open("map-%d.osm" % start, "w")
-		print "i=%d" % start
+		print("i=%d" % start)
 		url = "http://api.openstreetmap.org/api/0.6/map?bbox=%f,%f,%f,%f" % (left, bottom, right, top)
-		print url
+		print(url)
 		u = urllib2.urlopen(url)
 		f.write(u.read())
 		f.close()
 		u.close()
 		return start + 1
 	except Exception, e:
-		print "Exception, recurring"
+		print("Exception, recurring")
 		traceback.print_exc()
 		f.close()
 		return retrieve(left, bottom, right, top, 2, 2, start)
@@ -445,7 +446,7 @@ def chrono():
 	global chrono_old
 	now = datetime.datetime.now()
 	if chrono_old is not None:
-		print "Elapsed: %s" % (str(now - chrono_old),)
+		print("Elapsed: %s" % (str(now - chrono_old),))
 	chrono_old = now
 	
 

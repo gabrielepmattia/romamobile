@@ -19,6 +19,7 @@
 #    Roma mobile. If not, see http://www.gnu.org/licenses/.
 #
 
+from __future__ import print_function
 import tpl
 import pyximport; pyximport.install()
 from rpyc.utils.server import ThreadedServer
@@ -104,7 +105,7 @@ class RisorseVicine(object):
 		self.ris = []
 		
 	def aggiungi_risorsa(self, r, dist):
-		print "Aggiungo risorsa"
+		print("Aggiungo risorsa")
 		self.ris.append((r, dist))
 		
 	def completo(self):
@@ -122,7 +123,7 @@ class PuntiVicini(object):
 		self.nodi = nodi
 
 	def aggiungi_punto(self, r, dist, tempo):
-		print "Aggiungo punto"
+		print("Aggiungo punto")
 		self.ris.append((r, dist, tempo))
 
 	def completo(self):
@@ -243,11 +244,11 @@ def TrovalineaFactory(
 				aggiorna_download = tpl.AggiornatoreDownload(r, timedelta(seconds=20))
 				aggiorna_download.start()
 
-			print "Inizializzo supporto autocompletamento"
+			print("Inizializzo supporto autocompletamento")
 			ias = IndirizzoAutocompl.objects.all()
 			cls.autocomplete = Autocomplete([("A%d" % ia.pk, ia.indirizzo) for ia in ias])
 
-			print "Inizializzazione completata"
+			print("Inizializzazione completata")
 			
 			if pause is not None:
 				sleep(pause.seconds)
@@ -256,7 +257,7 @@ def TrovalineaFactory(
 			if tempo_reale:
 				try:
 					cls.aggiorna_arrivi.stop()
-					print "Terminati thread di aggiornamento vecchia versione della rete"
+					print("Terminati thread di aggiornamento vecchia versione della rete")
 				except Exception:
 					pass
 			if calcola_percorso:
@@ -471,7 +472,7 @@ def TrovalineaFactory(
 			try:
 				carpoolinggraph.carica_percorsi(self.rete, self.dijkstra_queue, carpoolingmodels.PassaggioOfferto.objects.filter(pk=pk))		
 			except Exception:
-				print "Errore nel caricamento car pooling"
+				print("Errore nel caricamento car pooling")
 				logging.error(traceback.format_exc())
 
 		@autopickle
@@ -481,7 +482,7 @@ def TrovalineaFactory(
 				ps = [x for x in pks]
 				carpoolinggraph.carica_percorsi(self.rete, self.dijkstra_queue, carpoolingmodels.PassaggioOfferto.objects.filter(pk__in=ps))		
 			except Exception:
-				print "Errore nel caricamento car pooling"
+				print("Errore nel caricamento car pooling")
 				logging.error(traceback.format_exc())
 
 		def _carica_nodo_risorsa(self, ct_ris, id_ris):
@@ -493,7 +494,7 @@ def TrovalineaFactory(
 				for a in archi_conn:
 					self.dijkstra_queue.add_arco(a)
 			except Exception:
-				print "Errore nel caricamento nodo risorsa"
+				print("Errore nel caricamento nodo risorsa")
 				logging.error(traceback.format_exc())			
 				
 		def _elimina_nodo_risorsa(self, ct_ris, id_ris):
@@ -501,26 +502,26 @@ def TrovalineaFactory(
 				n = self.grafo.nodi[(6, ct_ris, id_ris)]
 				self.dijkstra_queue.rm_nodo(n)
 			except Exception:
-				print "Errore nell'eliminazione nodo risorsa"
+				print("Errore nell'eliminazione nodo risorsa")
 				logging.error(traceback.format_exc())			
 		
 		@autopickle
 		def exposed_carica_nodo_risorsa(self, param):
-			print "Aggiungo nodo risorsa"
+			print("Aggiungo nodo risorsa")
 			ct_ris = param['ct_ris']
 			id_ris = param['id_ris']
 			self._carica_nodo_risorsa(ct_ris, id_ris)
 		
 		@autopickle
 		def exposed_elimina_nodo_risorsa(self, param):
-			print "Elimino nodo risorsa"
+			print("Elimino nodo risorsa")
 			ct_ris = param['ct_ris']
 			id_ris = param['id_ris']
 			self._elimina_nodo_risorsa(ct_ris, id_ris)
 			
 		@autopickle
 		def exposed_modifica_nodo_risorsa(self, param):
-			print "Modifico nodo risorsa"
+			print("Modifico nodo risorsa")
 			ct_ris = param['ct_ris']
 			id_ris = param['id_ris']
 			self._elimina_nodo_risorsa(ct_ris, id_ris)
@@ -560,7 +561,7 @@ def TrovalineaFactory(
 
 			peer = Peer.objects.filter(daemon=daemon)[0]
 			with peer.get_queue():
-				print "Calcolo il percorso"
+				print("Calcolo il percorso")
 				le = set()
 				tipi_ris = [int(t) for t in tipi_ris]
 				if linee_escluse is not None:
@@ -711,7 +712,7 @@ def TrovalineaFactory(
 							percorso.arrivo['address'] = stop['address']
 
 				except Exception:
-					print "Errore nel calcola percorso"
+					print("Errore nel calcola percorso")
 					logging.error(traceback.format_exc())
 
 				for n in nodi_del:
@@ -748,7 +749,7 @@ def TrovalineaFactory(
 			return out
 
 		def exposed_carica_rete(self):
-			print "Caricamento rete in corso"
+			print("Caricamento rete in corso")
 			lancia_processo_caricamento_rete()
 			db.reset_queries()
 			
@@ -776,7 +777,7 @@ def TrovalineaFactory(
 			
 		def exposed_oggetti_vicini(self, start):
 			try:
-				print "Oggetti vicini"
+				print("Oggetti vicini")
 				rv = PalineVicine(7, 12)
 				s, archi_geo = self.get_nodi_from_infopoint(start)
 				opt = copy(graph.opzioni_cp)
@@ -785,7 +786,7 @@ def TrovalineaFactory(
 					try:
 						d.cerca_vicini(s, rv, 1000, opt=opt)
 					except Exception:
-						print "Errore nella ricerca di paline vicine"
+						print("Errore nella ricerca di paline vicine")
 						logging.error(traceback.format_exc())
 				if len(archi_geo) > 0:
 					self.dijkstra_queue.rm_nodo(s)
@@ -799,7 +800,7 @@ def TrovalineaFactory(
 			return self.exposed_oggetti_vicini(param['start'])
 
 		def exposed_risorse_vicine(self, start, tipi_ris, num_ris, max_distanza=1000):
-			print "Risorse vicine"
+			print("Risorse vicine")
 			mappa = gmaps.Map()
 			rv = RisorseVicine(num_ris)
 			s, archi_geo = self.get_nodi_from_infopoint(start)
@@ -810,7 +811,7 @@ def TrovalineaFactory(
 				try:
 					d.cerca_vicini(s, rv, max_distanza, opt=opt)
 				except Exception:
-					print "Errore nella ricerca di paline vicine"
+					print("Errore nella ricerca di paline vicine")
 					logging.error(traceback.format_exc())
 			if len(archi_geo) > 0:
 				self.dijkstra_queue.rm_nodo(s)
@@ -997,30 +998,30 @@ def TrovalineaFactory(
 
 		@autopickle
 		def exposed_deserializza_dinamico(self, param):
-			print "Deserializing..."
+			print("Deserializing...")
 			self.rete.deserializza_dinamico(param)
-			print "Deserialization done"
+			print("Deserialization done")
 
 		@autostored()
 		def exposed_deserializza_dinamico_stored(self, param):
-			print "Deserializing stored network..."
+			print("Deserializing stored network...")
 			self.rete.deserializza_dinamico(param)
-			print "Stored deserialization done"
+			print("Stored deserialization done")
 
 		def exposed_get_rete_e_grafo(self):
 			return self.rete, self.grafo
 
 		@autostored()
 		def exposed_deserializza_dinamico_veicoli_stored(self, param):
-			print "Deserializing stored vehicles..."
+			print("Deserializing stored vehicles...")
 			self.rete.deserializza_dinamico_veicoli(param)
-			print "Stored deserialization done"
+			print("Stored deserialization done")
 
 		@autopickle
 		def exposed_deserializza_dinamico_veicoli(self, param):
-			print "Deserializing vehicles..."
+			print("Deserializing vehicles...")
 			self.rete.deserializza_dinamico_veicoli(param)
-			print "Deserialization done"
+			print("Deserialization done")
 
 		def exposed_get_rete_e_grafo(self):
 			return self.rete, self.grafo
@@ -1038,7 +1039,7 @@ def TrovalineaFactory(
 		@autopickle
 		def exposed_log_dati_avm_romatpl(self, dati):
 			# Esegue il log dei dati di roma tpl
-			print 'Dati arrivati'
+			print('Dati arrivati')
 			try:
 				dt = dati['dataora']
 				logavm = LogAvm(

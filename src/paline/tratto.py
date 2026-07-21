@@ -19,6 +19,7 @@
 #    Roma mobile. If not, see http://www.gnu.org/licenses/.
 #
 
+from __future__ import print_function
 from datetime import date, time, datetime, timedelta
 from servizi.utils import RPyCAllowRead, modifica_url_con_storia, getdef
 from django.utils.safestring import mark_safe
@@ -154,15 +155,15 @@ class Tratto(RPyCAllowRead):
 
 	def stampa_nric(self, indent=0):
 		spazi = "  " * indent
-		print spazi + "Tipo: ", type(self)
-		print spazi + "Partenza alle: ", self.tempo
-		print spazi + "Tempo attesa: ", self.tempo_attesa
-		print spazi + "Tempo percorrenza: ", self.tempo_percorrenza
-		print spazi + "Tempo attesa ric.:", self.get_tempo_attesa()
-		print spazi + "Tempo percorrenza ric.:", self.get_tempo_percorrenza()
-		print spazi + "Tempo totale ric.:", self.get_tempo_totale()
-		print spazi + "Arrivo alle: ", self.tempo + timedelta(seconds=self.get_tempo_totale())
-		print
+		print(spazi + "Tipo: ", type(self))
+		print(spazi + "Partenza alle: ", self.tempo)
+		print(spazi + "Tempo attesa: ", self.tempo_attesa)
+		print(spazi + "Tempo percorrenza: ", self.tempo_percorrenza)
+		print(spazi + "Tempo attesa ric.:", self.get_tempo_attesa())
+		print(spazi + "Tempo percorrenza ric.:", self.get_tempo_percorrenza())
+		print(spazi + "Tempo totale ric.:", self.get_tempo_totale())
+		print(spazi + "Arrivo alle: ", self.tempo + timedelta(seconds=self.get_tempo_totale()))
+		print()
 			
 	def ricalcola_tempi(self, rete, grafo, opz):
 		pass

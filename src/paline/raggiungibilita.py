@@ -19,6 +19,7 @@
 #    Roma mobile. If not, see http://www.gnu.org/licenses/.
 #
 
+from __future__ import print_function
 from grafo import DijkstraPool
 import datetime
 
@@ -75,12 +76,12 @@ def test_raggiungibilita(g, s_id):
 		unr = d.dijkstra(s, [], complete=True, opt=opzioni_cp, get_unreachable=True)
 		unr.update(d.rev_dijkstra(s, [], complete=True, opt=opzioni_cp, get_unreachable=True))
 				
-		print "%d unreachable nodes found out of %d" % (len(unr), len(g.nodi))
+		print("%d unreachable nodes found out of %d" % (len(unr), len(g.nodi)))
 		return unr
 
 def elimina_nodi_non_raggiungibili(g, unr):
 	tbd = []
-	print "Before: %d edges id's" % len(g.archi)
+	print("Before: %d edges id's" % len(g.archi))
 	cnt = 0
 	for eid in g.archi:
 		e = g.archi[eid]
@@ -89,8 +90,8 @@ def elimina_nodi_non_raggiungibili(g, unr):
 			cnt += 1
 	for eid in tbd:
 		del g.archi[eid]
-	print "After: %d edges id's" % len(g.archi)
-	print "%d edges deleted" % cnt		
+	print("After: %d edges id's" % len(g.archi))
+	print("%d edges deleted" % cnt)		
 		
 	tbd = []
 	for nid in g.nodi:
@@ -115,10 +116,10 @@ def elimina_nodi_non_raggiungibili(g, unr):
 				v.bstar.remove(e)
 	for nid in tbd:
 		del g.nodi[nid]
-	print "Unreachable nodes deleted"
+	print("Unreachable nodes deleted")
 	
 def rendi_fortemente_connesso(g, sid=(11, 247845823)):
-	print "Estrazione componente fortemente connessa"
+	print("Estrazione componente fortemente connessa")
 	unr = test_raggiungibilita(g, sid)
 	elimina_nodi_non_raggiungibili(g, unr)
 		

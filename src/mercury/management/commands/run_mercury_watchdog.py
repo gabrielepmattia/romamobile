@@ -19,6 +19,7 @@
 #    Roma mobile. If not, see http://www.gnu.org/licenses/.
 #
 
+from __future__ import print_function
 from django.core.management.base import BaseCommand, CommandError
 import settings
 from mercury.models import *
@@ -40,4 +41,4 @@ class Command(BaseCommand):
 			daemon = Daemon.get_process_daemon(name)
 			daemon.set_ready()
 			Watchdog(name).start()
-			print "Watchdog started"
+			print("Watchdog started")

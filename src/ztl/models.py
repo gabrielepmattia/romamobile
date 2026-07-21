@@ -20,6 +20,7 @@
 #
 
 
+from __future__ import print_function
 from collections import defaultdict
 from django.db import models
 from servizi.models import GiornoSettimana, Luogo
@@ -106,5 +107,5 @@ def load_shapefile():
 			z.geom = MultiPolygon(list(d[codice]), srid=source_srid)
 			z.save()
 		except ZTL.DoesNotExist:
-			print "ZTL %s non trovata" % codice
+			print("ZTL %s non trovata" % codice)
 

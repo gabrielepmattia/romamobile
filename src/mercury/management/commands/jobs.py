@@ -1,4 +1,4 @@
-﻿# coding: utf-8
+# coding: utf-8
 
 #
 #    Copyright 2015-2016 Roma servizi per la mobilità srl
@@ -20,6 +20,7 @@
 #
 
 
+from __future__ import print_function
 from django.core.management.base import BaseCommand, CommandError
 from optparse import make_option
 import settings
@@ -92,11 +93,11 @@ class Command(BaseCommand):
 					j.save()
 
 					command = "%s manage.py run_job %s" % (sys.executable, j.function)
-					print "Lancio %s" % j.function
-					print subprocess.Popen(command.split())
+					print("Lancio %s" % j.function)
+					print(subprocess.Popen(command.split()))
 
 			except:
-				print "Exception while launching job %s" % j.function
+				print("Exception while launching job %s" % j.function)
 				j.last_status = -1
 				j.last_message = 'Exception in job scheduler: %s' % traceback.format_exc()
 				j.save()
