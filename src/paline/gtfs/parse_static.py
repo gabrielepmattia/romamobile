@@ -48,7 +48,7 @@ def work_on_gtfs(url=STATIC_GTFS_URL, last_update=None, remap_only=False):
 		last_update = config.GIANO_DATA_MAPPING_RETE
 
 	if last_update is not None:
-		lu = requests.head(url, verify=False).headers['Last-Modified']
+		lu = requests.head(url, verify=False, allow_redirects=True).headers['Last-Modified']
 		try:
 			lu_dt = utils.parse_http_datetime(lu)
 		except:
