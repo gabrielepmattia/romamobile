@@ -57,6 +57,7 @@ from collections import OrderedDict
 #import gc
 
 from django.views.defaults import page_not_found, server_error
+from .py3compat import text_type
 
 
 login_ws_url = ''
@@ -516,7 +517,7 @@ def notifiche_fasce(request, id_notifica):
 			out = []
 			giorni = giorni_settimana()
 			for i in range(0, 7):
-				out.append(unicode(self["giorno%d" % i]) + " " + giorni[i].capitalize() )
+				out.append(text_type(self["giorno%d" % i]) + " " + giorni[i].capitalize() )
 			return mark_safe('<br />'.join(out))
 
 	ctx = {}

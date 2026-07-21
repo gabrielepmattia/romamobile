@@ -28,6 +28,7 @@ from servizi.utils import instance2dict
 import os, os.path
 from django.core.files import File
 import settings
+from servizi.py3compat import text_type
 
 
 modelli_risorse = set([])
@@ -94,7 +95,7 @@ class RisorsaCustom(Risorsa):
 		d = """
 			<b>Indirizzo</b>: %(indirizzo)s
 		""" % {
-			'indirizzo': unicode(self.indirizzo),
+			'indirizzo': text_type(self.indirizzo),
 		}
 		if len(self.note) > 0:
 			d += '<br /><b>Note:</b>: %s' % self.note
@@ -114,7 +115,7 @@ class EsercizioCommerciale(Risorsa):
 		return """
 			<b>Indirizzo</b>: %(indirizzo)s<br />
 		""" % {
-			'tipo': unicode(self.tipo),
+			'tipo': text_type(self.tipo),
 			'indirizzo': self.indirizzo,
 		}
 	

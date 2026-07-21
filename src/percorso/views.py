@@ -65,13 +65,14 @@ from hashlib import md5
 import traceback
 from servizi.views import sostituisci_preferiti
 import requests
+from servizi.py3compat import text_type
 
 percorso1 = ServerVersione("percorso", 1)
 percorso2 = ServerVersione("percorso", 2)
 
 def safe_string_to_unicode(s):
 	if type(s) == SafeString or type(s) == SafeUnicode:
-		return unicode(s)
+		return text_type(s)
 	return s
 
 def infopoint_to_cp(request, address):

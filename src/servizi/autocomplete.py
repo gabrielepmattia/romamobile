@@ -27,6 +27,7 @@ import requests
 from .infopoint import ESRI_GEOCODER_URL_PREFIX
 import json
 import re
+from .py3compat import text_type
 
 class AutocompleteInternal(object):
 	def __init__(self, resources, min_len=3, delimiter=" |/|'"):
@@ -44,7 +45,7 @@ class AutocompleteInternal(object):
 			ws = self.splitter.split(res.lower())
 			for w in ws:
 				if len(w) >= min_len:
-					w = unicode(w)
+					w = text_type(w)
 					self.words[w].append(i)
 		self.t = trie.Trie(self.words.keys())
 
@@ -55,7 +56,7 @@ class AutocompleteInternal(object):
 
 		Return a list of pairs (item_data, resource)
 		"""
-		lookup = unicode(lookup)
+		lookup = text_type(lookup)
 		ws = self.splitter.split(lookup.lower())
 		res = None
 		for w in ws:

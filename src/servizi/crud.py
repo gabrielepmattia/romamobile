@@ -31,6 +31,7 @@ from paline import geomath
 from .utils import datetime2time
 from django.contrib.gis.geos import Point
 from pprint import pprint
+from .py3compat import text_type
 
 def testlist(list, el, value=None):
 	return el in list and list[el] == value
@@ -169,7 +170,7 @@ class Crud(object):
 			elif type == 'string':
 				value = getattr(r, f[0])
 				if value is not None:
-					value = unicode(value)
+					value = text_type(value)
 				else:
 					value = '-'
 			elif type == 'date':
@@ -415,7 +416,7 @@ class Crud(object):
 				else:
 					setattr(o, k, value)
 			except ItemException as ie:
-				error = unicode(ie)
+				error = text_type(ie)
 				error_fields.append(k)
 		if len(mandatory) > 0:
 			error = 'Riempi i campi obbligatori'
@@ -470,7 +471,7 @@ class Crud(object):
 				else:
 					out_values[k] = value
 			except ItemException as ie:
-				error = unicode(ie)
+				error = text_type(ie)
 				error_fields.append(k)
 		if len(mandatory) > 0:
 			error = 'Riempi i campi obbligatori'

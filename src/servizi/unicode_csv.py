@@ -1,3 +1,11 @@
+"""
+Wrapper unicode attorno al modulo `csv` di Python 2.
+
+Su Python 3 il modulo `csv` lavora gia' in testo: questo file va eliminato, non
+portato, sostituendo gli usi con `csv` diretto. Vedi
+documentation/features/migrazione-stack-modernizzazione.md.
+"""
+
 import csv
 import cStringIO
 import codecs
@@ -15,7 +23,7 @@ class UnicodeCsvReader(object):
         # read and split the csv row into fields
         row = self.csv_reader.next() 
         # now decode
-        return [unicode(cell, self.encoding) for cell in row]
+        return [cell.decode(self.encoding) for cell in row]
 
     @property
     def line_num(self):

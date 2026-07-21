@@ -36,6 +36,7 @@ from django.core.cache import cache
 from contextlib import contextmanager
 import markdown
 import random
+from .py3compat import text_type
 
 
 RICERCHE_RECENTI_MAX_LENGTH = 10
@@ -91,7 +92,7 @@ class FasciaValidita(models.Model):
 		return ", ".join([weekday2string(int(x), True).capitalize() for x in self.giorni])
 	
 	def __unicode__(self):
-		return "%s: Dalle %s alle %s di %s" % (unicode(self.con_fasce), self.ora_inizio_breve(), self.ora_fine_breve(), self.giorni_breve())
+		return "%s: Dalle %s alle %s di %s" % (text_type(self.con_fasce), self.ora_inizio_breve(), self.ora_fine_breve(), self.giorni_breve())
 	
 	class Meta:
 		abstract = True
@@ -177,7 +178,7 @@ class LinguaPreferita(models.Model):
 	lingua = models.ForeignKey(Lingua)
 	def __unicode__(self):
 		
-		return unicode(self.utente)
+		return text_type(self.utente)
 	
 	class Meta:
 		verbose_name_plural = 'Lingue preferite'	
@@ -187,7 +188,7 @@ class LogoPersonalizzato(models.Model):
 	path = models.CharField(max_length=63)
 	
 	def __unicode__(self):
-		return unicode(self.utente)
+		return text_type(self.utente)
 	
 	class Meta:
 		verbose_name_plural = 'Loghi personalizzati'		
@@ -230,7 +231,7 @@ class Versione(models.Model):
 	log_risposte = models.BooleanField(default=False)
 	
 	def __unicode__(self):
-		return u"%s/%d" % (unicode(self.servizio), self.numero)
+		return u"%s/%d" % (text_type(self.servizio), self.numero)
 	
 	class Meta:
 		verbose_name_plural = 'Versioni'	
@@ -290,7 +291,7 @@ class GruppoServizio(models.Model):
 	gruppo = models.ForeignKey(Group)
 	
 	def __unicode__(self):
-		return u"(%s, %s)" % (unicode(self.servizio), unicode(self.gruppo))
+		return u"(%s, %s)" % (text_type(self.servizio), text_type(self.gruppo))
 	
 	class Meta:
 		verbose_name = 'Gruppo abilitato al servizio'
@@ -360,7 +361,7 @@ class UtenteGenerico(models.Model):
 	
 	def __unicode__(self):
 		if self.utente is not None:
-			return unicode(self.utente)
+			return text_type(self.utente)
 		else:
 			return self.sessione
 	
@@ -423,7 +424,7 @@ class Luogo(models.Model):
 		models.Model.delete(self)
 		
 	def descrizione(self):
-		return unicode(self)	
+		return text_type(self)	
 	
 	class Meta:
 		verbose_name_plural = "Luoghi"

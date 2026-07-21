@@ -38,6 +38,7 @@ import settings
 from constance import config
 from servizi.utils import template_to_mail, group_by
 import math
+from servizi.py3compat import text_type
 
 CARPOOLING_DAYS = 7
 
@@ -458,7 +459,7 @@ class UtenteCarPooling(models.Model):
 		return cls.objects.get(user=user)
 
 	def __unicode__(self):
-		return "%s (%s/5.0)" % (unicode(self.user), self.feedback_complessivo_arrotondato())
+		return "%s (%s/5.0)" % (text_type(self.user), self.feedback_complessivo_arrotondato())
 
 def costo_arrotondato(distanza):
 	c = (distanza * config.CARPOOLING_COSTO_CHILOMETRICO) / (1000.0 * 2.0)

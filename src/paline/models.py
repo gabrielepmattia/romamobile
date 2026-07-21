@@ -55,6 +55,8 @@ from mercury.models import Mercury
 from gis.models import Polilinea
 from pprint import pprint
 import zlib
+from functools import cmp_to_key
+from servizi.py3compat import text_type, cmp
 
 INTERVALLO_IN_ARRIVO = 90 # secondi
 
@@ -917,7 +919,7 @@ def get_occupation_status_decoder():
 
 def dettaglio_palina(palina, linee_escluse=set([]), nome_palina=None, caching=False, as_service=False):
 	v = palina.getVeicoli(caching=caching)['veicoli']
-	v.sort(cmp=_cmp_linea_tempo)
+	v.sort(key=cmp_to_key(_cmp_linea_tempo))
 	v1 = []
 	v2 = []
 	linee_usate = set()
@@ -1020,7 +1022,7 @@ def cmp_tempi_attesa(a, b):
 	elif ta == -1 and tb != -1:
 		return 1
 	elif ta != -1:
-		return ta.__cmp__(tb)
+		return cmp(ta, tb)
 	else:
 		c = cmp(int(a['distanza_fermate']), int(b['distanza_fermate']))
 		if c != 0 or not a['a_capolinea']:
@@ -1056,8 +1058,8 @@ def dettaglio_paline(nome, paline, linee_escluse=[], aggiungi=None, caching=Fals
 			v2.extend(w2)
 			v3.extend(w3)
 			carteggi_usati.update(c)
-	v1.sort(cmp=cmp_tempi_attesa)
-	v2.sort(cmp=cmp_tempi_attesa)
+	v1.sort(key=cmp_to_key(cmp_tempi_attesa))
+	v2.sort(key=cmp_to_key(cmp_tempi_attesa))
 	return v1, v2, v3, carteggi_usati
 
 
@@ -1100,7 +1102,7 @@ class GruppoPalinePreferite(models.Model):
 		if self.singleton:
 			try:
 				p = PalinaPreferita.objects.get(gruppo=self)
-				return unicode(p)
+				return text_type(p)
 			except Exception:
 				return ''			
 		else:
@@ -1140,7 +1142,7 @@ class RichiestaNotificaPalina(RichiestaNotifica):
 	
 	def verifica_condizione(self):
 		gp = self.gruppo
-		nome = unicode(gp)
+		nome = text_type(gp)
 		paline = gp.palinapreferita_set.all()
 		linee_escluse = [l.id_linea for l in gp.lineapreferitaesclusa_set.all()]
 		v1, v2, v3, carteggi_usati = dettaglio_paline(nome, paline, linee_escluse)

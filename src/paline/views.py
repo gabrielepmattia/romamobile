@@ -66,6 +66,8 @@ from xhtml.templatetags.format_extras import arrotonda_distanza
 from mercury.models import Mercury, Job
 import hashlib
 from pprint import pprint
+from functools import cmp_to_key
+from servizi.py3compat import text_type, cmp
 
 
 logger = logging.getLogger('paline')
@@ -217,7 +219,7 @@ def _dettaglio_paline(request, nome, paline, linee_escluse=[], aggiungi=None, ct
 	arrivi_per_palina.sort(key=lambda a: a['nome_palina'])
 	ctx['primi_per_palina'] = arrivi_per_palina
 	v_tutti = v1 + v2
-	v_tutti.sort(cmp=cmp_tempi_attesa)
+	v_tutti.sort(key=cmp_to_key(cmp_tempi_attesa))
 	aggiungi_banda(v_tutti)
 
 	ctx['arrivi'] = v_tutti
@@ -259,7 +261,7 @@ def palina(request, id_palina, ctx=None):
 def gruppo(request, id_gruppo):
 	try:
 		gp = GruppoPalinePreferite.objects.get(user=request.user, pk=id_gruppo)
-		nome = unicode(gp)
+		nome = text_type(gp)
 		paline = gp.palinapreferita_set.all()
 		linee_escluse = [l.id_linea for l in gp.lineapreferitaesclusa_set.all()]
 		return _dettaglio_paline(request, nome, paline, linee_escluse, ctx={'id_gruppo': id_gruppo})
@@ -867,7 +869,7 @@ def _disambigua(request,
 						if not p in percorsi_usati:
 							percorsi_usati.add(p)
 							nuovi_percorsi = True
-				linee.sort(cmp=lac.comp)
+				linee.sort(key=cmp_to_key(lac.comp))
 				lac.add_trovate(linee)
 				palina.linee_info = linee[:max_linee_per_palina]
 				palina.linee_extra = linee[max_linee_per_palina:]

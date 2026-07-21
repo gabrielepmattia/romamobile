@@ -1718,7 +1718,7 @@ class Rete(object):
 		out = []
 		for tp in self.tratti_percorsi.values():
 			if cond(tp):
-				p = tp.percorsi.values()[0].rete_percorso
+				p = list(tp.percorsi.values())[0].rete_percorso
 				out.append({
 					'id_palina_s': tp.s.id_palina,
 					'id_palina_t': tp.t.id_palina,
@@ -3837,7 +3837,7 @@ def grafo2shape(g, path, filename):
 
 def esporta_tratti_ferroviari():
 	def cond_is_ferro(tp):
-		p = tp.percorsi.values()[0].rete_percorso
+		p = list(tp.percorsi.values())[0].rete_percorso
 		return p.tipo in {'ME', 'FR', 'FC'}
 
 	rete = Rete()

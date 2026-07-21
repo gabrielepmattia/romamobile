@@ -46,6 +46,7 @@ session_engine = importlib.import_module(settings.SESSION_ENGINE)
 from fz_SimpleXMLRPCServer import SimpleXMLRPCDispatcher
 from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
+from servizi.py3compat import text_type
 
 standard_logger = logging.getLogger('standard')
 
@@ -66,7 +67,7 @@ class Invocazione(models.Model):
 	orario = models.DateTimeField()
 	
 	def __unicode__(self):
-		return u"%s, %s, %s" % (unicode(self.orario), unicode(self.versione), self.metodo)
+		return u"%s, %s, %s" % (text_type(self.orario), text_type(self.versione), self.metodo)
 	
 	class Meta:
 		verbose_name_plural = 'Invocazioni'	
@@ -77,7 +78,7 @@ class Parametro(models.Model):
 	valore = models.CharField(max_length=1023)
 	
 	def __unicode__(self):
-		return u"%s, %s: %s" % (unicode(self.invocazione), self.nome, self.valore)
+		return u"%s, %s: %s" % (text_type(self.invocazione), self.nome, self.valore)
 	
 	class Meta:
 		verbose_name_plural = 'Parametri'		
@@ -87,7 +88,7 @@ class Risposta(models.Model):
 	valore = models.CharField(max_length=65000)
 	
 	def __unicode__(self):
-		return u"%s, %s" % (unicode(self.invocazione), self.valore)
+		return u"%s, %s" % (text_type(self.invocazione), self.valore)
 	
 	class Meta:
 		verbose_name_plural = 'Risposte'
@@ -267,7 +268,7 @@ class ServerVersione(SimpleXMLRPCDispatcher):
 			dt_inizio_invocazione = datetime.datetime.now()
 			standard_logger.debug("Invocato metodo %s" % name)
 			res = f(*args)
-			standard_logger.debug("Uscita dal metodo %s. Tempo impiegato: %s" % (name, unicode(datetime.datetime.now() - dt_inizio_invocazione)))
+			standard_logger.debug("Uscita dal metodo %s. Tempo impiegato: %s" % (name, text_type(datetime.datetime.now() - dt_inizio_invocazione)))
 			return res
 		
 		# Make g a well-behaved decorator
@@ -312,7 +313,7 @@ class ServerVersione(SimpleXMLRPCDispatcher):
 			response.write('<a href="http://www.djangoproject.com/"> <img src="http://media.djangoproject.com/img/badges/djangomade124x25_grey.gif" border="0" alt="Made with Django." title="Made with Django."></a>')
 	
 		response['Content-length'] = str(len(response.content))
-		#standard_logger.debug("Uscita dal metodo. Tempo impiegato: %s" % unicode(datetime.datetime.now() - dt_inizio_invocazione))
+		#standard_logger.debug("Uscita dal metodo. Tempo impiegato: %s" % text_type(datetime.datetime.now() - dt_inizio_invocazione))
 		return response
 	
 	def xmlrpc(self, name, require_token=True, group_required=None, cost=1):
