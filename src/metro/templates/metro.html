@@ -28,6 +28,7 @@
 {% endfor %}
 </p>
 
+{% if linee_fc %}
 <h2 class="vskip">{% trans "Ferrovie concesse" %}</h2>
 <p>
 {% for l in linee_fc %}
@@ -39,6 +40,7 @@
 	<br />
 {% endfor %}
 </p>
+{% endif %}
 
 {% if request.GET.legend %}
 	<div id="legend">
