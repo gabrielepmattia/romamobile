@@ -123,8 +123,10 @@ stack attuale (Py2/Django1.5).
 - [x] Affrontare a mano i punti `unicode()` e i `cmp=` (→ `cmp_to_key`), via
       `servizi/py3compat.py`. Restano da rivedere i punti str/bytes veri (pickle,
       RPyC, I/O di file), che non sono una sostituzione meccanica.
-- [ ] Ricompilare le estensioni `.pyx` con Cython moderno; correggere le differenze
-      di tipizzazione emerse.
+- [x] Cython 0.23.4 → 0.29.37 (ultima serie con target Py2) e `language_level=2`
+      fissato esplicitamente in ogni `.pyx`. Il salto a **Cython 3** resta da fare
+      insieme a Python 3: i warning già segnalano `cpdef variables` e un
+      `cdef variable 'time' declared after it is used` in `grafo.pyx`.
 - [ ] Aggiornare `requirements.txt` e il `Dockerfile` (immagine base Py3).
 
 **Exit criteria:** l'intero stack parte e passa i test di Fase 0 **su Python 3**,
@@ -393,6 +395,47 @@ test manuali) è a carico dell'ambiente di deploy dopo ogni batch.
     # solo se 0 falliti:
     sudo docker tag romamobile:test romamobile:latest && docker restart ...
     ```
+
+- **Fase 1 · batch 7 — Cython.** `Cython==0.23.4` (2015) → **0.29.37**, l'ultima serie
+  che compila ancora per Python 2.7: si aggiorna il compilatore *prima* che cambi
+  l'interprete sotto di lui.
+  - **La parte che conta è il pin del `language_level`.** Ogni `.pyx` ora dichiara
+    `# cython: language_level=2`. Senza, il livello lo decide il default del
+    compilatore: 2 con un warning su 0.29, ma **3 su Cython 3.x** — e cambierebbe la
+    semantica di stringhe e divisione dentro il core di routing nel giorno in cui
+    qualcuno aggiorna.
+  - Resi espliciti gli import relativi *dentro* i `.pyx` (`import tratto` →
+    `from . import tratto` in `grafo.pyx`, idem `geocoder.pyx` e `bt/*.pyx`): è la
+    parte che il batch 3 aveva lasciato indietro. I `cimport` non si toccano, si
+    risolvono tramite i `.pxd` accanto e seguono regole proprie.
+  - **Su `bt/`:** nessuno importa `FastAVLTree` & co., solo l'`AVLTree` puro Python
+    che usa `paline/tpl.py`, e `bt/__init__.py` ha già il fallback. Quindi il rumore
+    `ctrees.h: No such file` che quei `.pyx` producono nel log di `giano` a ogni
+    avvio è **innocuo**: `pyximport` li compila senza la directory sorgente negli
+    include path e il fallback interviene. Sono candidati alla rimozione, non a una
+    riparazione.
+  - **Test di caratterizzazione sul routing**, che è ciò che un cambio di compilatore
+    mette davvero a rischio — calcolo percorso reale via HTTP, senza dipendere dal
+    geocoder esterno:
+
+    ```
+    curl -sLG --data-urlencode "start_address=punto:(41.8902,12.4922)" \
+              --data-urlencode "stop_address=punto:(41.9009,12.5020)" \
+              --data-urlencode "quando=0" --data-urlencode "mezzo=1" \
+              --data-urlencode "Submit=Cerca" http://127.0.0.1:8000/percorso/
+    ```
+
+    | | prima (Cython 0.23.4) | dopo (Cython 0.29.37) |
+    |---|---|---|
+    | esito | 200, **13311 b** | 200, **13311 b** (identico byte per byte) |
+    | itinerario | Colosseo → Metro B/B1 → Termini | uguale |
+    | durata / distanza | 18 minuti, 1.9 km, 550 m a piedi | uguale |
+
+  - **Regalo del compilatore nuovo:** warning che la 0.23 non dava, e che dicono in
+    anticipo cosa romperà il passaggio a Cython 3 — da affrontare quando si farà
+    quel salto:
+    - `grafo.pyx:68,69` — `cpdef variables will not be supported in Cython 3`
+    - `grafo.pyx:69` — `cdef variable 'time' declared after it is used`
 
 ### Validazione deploy 2026-07-21 (`hetzner-4gb-1`)
 
