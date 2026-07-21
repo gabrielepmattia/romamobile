@@ -30,7 +30,12 @@ try:
 except ImportError:  # Python 3
 	import urllib.request as urllib2
 	from urllib.parse import urlencode
-from BeautifulSoup import BeautifulStoneSoup
+# Era BeautifulStoneSoup di BeautifulSoup 3, che non esiste su Python 3.
+# Il parser scelto e' 'html.parser' e non 'xml': il vecchio BeautifulStoneSoup
+# metteva in minuscolo i nomi dei tag, e questo codice ci conta (soup.contextname,
+# soup.coord_x). Con il parser XML i nomi resterebbero come nel documento e quegli
+# accessi tornerebbero None.
+from bs4 import BeautifulSoup
 import xml.etree.ElementTree as ET 
 import pyproj
 from django.utils.translation import ugettext as _
@@ -348,7 +353,7 @@ def geocode_place_infotp(request, composite_address):
 	xnumber = ET.SubElement(root, "number")
 	xnumber.text = streetno
 	response = urllib2.urlopen(infopoint_url + "norm_xml.asp", ET.tostring(root), timeout=settings.INFOPOINT_TIMEOUT)
-	soup = BeautifulStoneSoup(response.read())
+	soup = BeautifulSoup(response.read(), 'html.parser')
 	if soup.status.text == 'OK':
 		#lon, lat = gbfe(float(soup.coord_x.text), float(soup.coord_y.text), inverse=True)
 		#x, y = gbfo(lon, lat)
@@ -550,7 +555,7 @@ def find_resources(request, point, resource_type):
 	image_height.text = str(map_height)
 	
 	response = urllib2.urlopen(infopoint_url + "resource_xml.asp", ET.tostring(root), timeout=settings.INFOPOINT_TIMEOUT)
-	soup = BeautifulStoneSoup(response.read())
+	soup = BeautifulSoup(response.read(), 'html.parser')
 	request.session['infopoint'] = {
 		'point': point,
 		'soup': soup,
@@ -602,7 +607,7 @@ def calculate_route(request, mean, mode, start, stop, date=None):
 	tongue.text = _("ita")		
 		
 	response = urllib2.urlopen(infopoint_url + "navigate_xml.asp", ET.tostring(root), timeout=settings.INFOPOINT_TIMEOUT)
-	soup = BeautifulStoneSoup(response.read())
+	soup = BeautifulSoup(response.read(), 'html.parser')
 	request.session['infopoint'] = {
 		'mean': mean,
 		'mode': mode,
@@ -666,7 +671,7 @@ def prepare_map(request, number=None):
 				's': '4'
 			}[number]
 	response = urllib2.urlopen(infopoint_url + "navigate_xml.asp", ET.tostring(root), timeout=settings.INFOPOINT_TIMEOUT)
-	soup = BeautifulStoneSoup(response.read())
+	soup = BeautifulSoup(response.read(), 'html.parser')
 	#print soup
 	ip['map'] = base64.b64decode(soup.server_response.image.text)
 	ip['context'] = soup.contextname.text

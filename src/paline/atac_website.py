@@ -3,13 +3,13 @@
 
 from __future__ import print_function
 import requests
-from BeautifulSoup import BeautifulStoneSoup
+from bs4 import BeautifulSoup
 from pprint import pprint
 
 
 def get_atac_buses_viaggiaconatac(id_palina):
 	r = requests.get("http://viaggiacon.atac.roma.it/asp/orariFermata.asp?impianto={}".format(id_palina))
-	soup = BeautifulStoneSoup(r.text, fromEncoding='iso-8859-1')
+	soup = BeautifulSoup(r.text, 'html.parser', from_encoding='iso-8859-1')
 	fermate = soup.findAll('fermata')
 	out = []
 	for f in fermate:
