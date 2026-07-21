@@ -144,7 +144,11 @@ def Tutte(request, token, lingua):
 def default(request, categoria_selezionata=None):
 	ctx = {}
 	cs = Categoria.objects.filter(codice_lingua=request.lingua.codice).order_by('pk')
-	ctx['categoria_selezionata'] = int(categoria_selezionata) if categoria_selezionata is not None else cs[0].id_categoria
+	if categoria_selezionata is not None:
+		ctx['categoria_selezionata'] = int(categoria_selezionata)
+	else:
+		# Nessuna categoria finché non arriva il primo feed di Service Alerts
+		ctx['categoria_selezionata'] = cs[0].id_categoria if cs else None
 	ctx['categorie']= cs
 	return TemplateResponse(request, 'news.html', ctx)
 
