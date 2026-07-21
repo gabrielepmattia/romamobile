@@ -349,10 +349,19 @@ test manuali) è a carico dell'ambiente di deploy dopo ogni batch.
 
 - **Fase 1 · batch 6 — dipendenze morte.** Primo batch che tocca
   `requirements.txt`, quindi il primo che **richiede il rebuild dell'immagine**.
-  - Rimossi 5 pacchetti che nel codice non sono importati da nessuna parte:
-    `pycrypto` (abbandonato, CVE note), `pycha` e `cGPolyEncode` (che **non hanno
-    alcuna release Python 3**, quindi avrebbero bloccato la migrazione per codice
-    che non li usa), `pycurl`, `PyYAML`.
+  - Rimossi 4 pacchetti che nel codice non sono importati da nessuna parte:
+    `pycrypto` (abbandonato, CVE note), `pycha`, `pycurl`, `PyYAML`.
+  - ⚠️ **Il nome del pacchetto PyPI non è il nome del modulo.** Avevo tolto anche
+    `cGPolyEncode` cercando `import cGPolyEncode`: il modulo che installa si chiama
+    **`cgpolyencode`**, e `paline/gmaps.py` importa proprio quello. Con la nuova
+    immagine 21 moduli non si importavano più, tutti a valle di `paline.gmaps`.
+    Ripristinato. **Quando si cerca se un pacchetto è usato, va cercato il nome del
+    modulo importabile, non quello del pacchetto** — e i due coincidono solo per
+    caso (`PyYAML` → `yaml`, `pyshp` → `shapefile`, `gtfs-realtime-bindings` →
+    `google.transit`, `django-json-rpc` → `jsonrpc`).
+  - Da fare in seguito: `cGPolyEncode` è un binding C **senza release Python 3**,
+    quindi resta un bloccante. Il sostituto è il pacchetto puro-Python `polyline`;
+    attenzione all'ordine delle coordinate, questo encoder prende `(lon, lat)`.
   - **Trappola:** togliere `pycrypto` da `requirements.txt` non lo toglie affatto —
     la build continuava a compilarlo, perché lo richiede `paramiko` 1.16. Anche
     `paramiko` però serve a una cosa sola, `gtfs_rt_upload`, che è **spenta**:
@@ -372,7 +381,18 @@ test manuali) è a carico dell'ambiente di deploy dopo ogni batch.
   - **Procedura di deploy diversa dai batch precedenti:** immagine ricostruita con
     tag `romamobile:test`, verificata con `check_imports` *contro la nuova immagine*,
     e solo dopo ritaggata e messa in servizio. Il bind mount del codice non basta
-    più: cambiano i pacchetti installati.
+    più: cambiano i pacchetti installati. È esattamente questo gate ad aver
+    intercettato il pasticcio di `cgpolyencode` prima che arrivasse in produzione.
+
+    ```
+    sudo docker build -t romamobile:test .
+    sudo docker run --rm --network romamobile_default \
+      -v /tmp/rmsrc:/app -v "$PWD/secrets/settings.json:/app/secrets/settings.json:ro" \
+      -v /tmp/check_imports.py:/tmp/check_imports.py:ro \
+      -w /app romamobile:test python /tmp/check_imports.py
+    # solo se 0 falliti:
+    sudo docker tag romamobile:test romamobile:latest && docker restart ...
+    ```
 
 ### Validazione deploy 2026-07-21 (`hetzner-4gb-1`)
 
@@ -414,6 +434,14 @@ test manuali) è a carico dell'ambiente di deploy dopo ogni batch.
   endpoint 200 e le risposte **più grandi** di prima (dettaglio palina 5370 → 8576 b,
   linea 64 4659 → 5483 b) perché le linee non sono più nascoste e mostrano previsioni
   e occupazione posti. Nei log di `giano` ricompare `Aggiornamento arrivi completato!!`.
+
+- **Batch 6** (`0e2040f`, `0ecad2b`, `d629ceb`): primo deploy con **immagine
+  ricostruita**. `requirements.txt` passa da 30 a 25 pacchetti. Nell'immagine in
+  servizio non ci sono più né `pycrypto` né `paramiko`; c'è `beautifulsoup4 4.9.3`.
+  `check_imports` contro l'immagine nuova: **202 moduli, 0 falliti**. Container
+  ricreati con `docker compose up -d --force-recreate giano web`, risalita in ~60 s,
+  smoke test tutto 200 e linee di nuovo attive (`🚍 3 🕒 5` sulla 64). Vecchia
+  immagine conservata come `romamobile:rollback`.
 
 **Nota operativa (da tenere nel runbook di deploy):** quando un batch tocca un
 `.pyx`, `pyximport` invalida la cache in `~/.pyxbld` e **ricompila a runtime** al
