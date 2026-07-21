@@ -1821,8 +1821,13 @@ class Rete(object):
 			self.percorrenze_calcolate = True
 			print "Calcolo percorrenze completato"
 			print "Aggiorno alerts"
-			self.gtfs_alerts = alerts.read_alerts()
-			print "Alerts aggiornati"
+			try:
+				self.gtfs_alerts = alerts.read_alerts()
+				print "Alerts aggiornati"
+			except Exception:
+				# Un feed alert irraggiungibile o malformato non deve
+				# interrompere il resto del ciclo di aggiornamento della rete
+				traceback.print_exc()
 			Thread(target=self.gtfs_update).start()
 		# print "Log posizione veicoli"
 		# plpvs = PercorsiLogPosizioneVeicolo.objects.all()

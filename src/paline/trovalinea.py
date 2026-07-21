@@ -967,7 +967,7 @@ def TrovalineaFactory(
 					r = self.rete.percorsi[route_id]
 					p = r.tratti_percorso[-1].t.rete_palina
 					out[route_id]['dest_zone'] = p.zona
-					if r.id_linea in self.rete.gtfs_alerts:
+					if self.rete.gtfs_alerts is not None and r.id_linea in self.rete.gtfs_alerts:
 						out[route_id]['alerts'] = self.rete.gtfs_alerts[r.id_linea]
 			return out
 
