@@ -12,7 +12,20 @@ MAPPING_FILE = os.path.join(settings.TROVALINEA_PATH_RETE, 'mapping_gtfs.json')
 
 
 def get_gtfs_rt_last_update():
-	return requests.head(settings.GTFS_RT_URL, verify=False).headers['Last-Modified']
+	"""
+	Last-Modified del feed realtime, usato da chi chiama per non rielaborare due
+	volte lo stesso aggiornamento.
+
+	`allow_redirects` non e' un dettaglio: romamobilita.it e' passato da Drupal a
+	WordPress e 301-redirige la vecchia URL, e la risposta di redirect non porta
+	alcun Last-Modified.
+
+	Se l'header manca comunque, si ripiega sull'ora corrente: chi chiama aspetta
+	in loop finche' il valore *cambia*, quindi un header assente bloccherebbe
+	l'aggiornamento arrivi per sempre. Meglio rielaborare un feed gia' visto.
+	"""
+	r = requests.head(settings.GTFS_RT_URL, verify=False, allow_redirects=True)
+	return r.headers.get('Last-Modified') or datetime.now().isoformat()
 
 
 def read_vehicles(predicate=None):
