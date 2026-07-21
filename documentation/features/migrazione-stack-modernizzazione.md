@@ -66,10 +66,11 @@ progetto e va trattato come progetto indipendente dal backend.
 
 ### Dipendenze morte / da sostituire
 
-| Attuale | Sostituto |
-|---|---|
-| `BeautifulSoup==3.2.1` | `beautifulsoup4` |
-| `pycrypto==2.6.1` (morto, CVE noti) | `pycryptodome` |
+| Attuale | Sostituto | Stato |
+|---|---|---|
+| `BeautifulSoup==3.2.1` | `beautifulsoup4` | ✅ batch 6 |
+| `pycrypto==2.6.1` (morto, CVE noti) | nessuno: non era importato | ✅ batch 6 (via rimozione di `paramiko`) |
+| `pycha`, `cGPolyEncode`, `pycurl`, `PyYAML` | nessuno: non importati | ✅ batch 6 |
 | `Cython==0.23.4` | Cython moderno |
 | `pyproj==1.9.5.1` | `pyproj` 3.x (API cambiata) |
 | `rpyc==3.3.0` | RPyC attuale |
@@ -345,6 +346,33 @@ test manuali) è a carico dell'ambiente di deploy dopo ogni batch.
     `servizi/utils.py` (`current`), `servizi/crud.py` (`values`), `paline/jobs.py`
     (`esci`), `paline/osm.py` (`raggiungibilita`), `paline/gtfs/realtime.py`
     (`test_decode`), `romatpl_decoder.py` (`PORT`).
+
+- **Fase 1 · batch 6 — dipendenze morte.** Primo batch che tocca
+  `requirements.txt`, quindi il primo che **richiede il rebuild dell'immagine**.
+  - Rimossi 5 pacchetti che nel codice non sono importati da nessuna parte:
+    `pycrypto` (abbandonato, CVE note), `pycha` e `cGPolyEncode` (che **non hanno
+    alcuna release Python 3**, quindi avrebbero bloccato la migrazione per codice
+    che non li usa), `pycurl`, `PyYAML`.
+  - **Trappola:** togliere `pycrypto` da `requirements.txt` non lo toglie affatto —
+    la build continuava a compilarlo, perché lo richiede `paramiko` 1.16. Anche
+    `paramiko` però serve a una cosa sola, `gtfs_rt_upload`, che è **spenta**:
+    l'unica chiamata in `tpl.Aggiornatore.run()` è commentata e i settings che legge
+    (`WEBSERVER_HOST/USER/PASSWORD`) non esistono. Bastava però l'`import paramiko`
+    in cima al modulo — importato da `trovalinea.py` — per renderlo obbligatorio.
+    Spostato dentro le due funzioni che lo usano e rimosso dalle dipendenze.
+  - `BeautifulSoup` 3.2.1 (nessuna release Py3) → `beautifulsoup4`. Usato in due
+    punti, entrambi via `BeautifulStoneSoup`: `paline/atac_website.py` (solo dal suo
+    `__main__`) e `servizi/infopoint.py`, dove `infopoint_url` è la stringa vuota,
+    quindi quelle chiamate non raggiungono comunque alcun server.
+    - **Il parser scelto è `'html.parser'`, non `'xml'`:** `BeautifulStoneSoup`
+      metteva in minuscolo i nomi dei tag e quel codice ci conta
+      (`soup.contextname`, `soup.coord_x`). Con il parser XML i nomi manterrebbero
+      la capitalizzazione originale e quegli accessi tornerebbero `None` — una
+      regressione silenziosa.
+  - **Procedura di deploy diversa dai batch precedenti:** immagine ricostruita con
+    tag `romamobile:test`, verificata con `check_imports` *contro la nuova immagine*,
+    e solo dopo ritaggata e messa in servizio. Il bind mount del codice non basta
+    più: cambiano i pacchetti installati.
 
 ### Validazione deploy 2026-07-21 (`hetzner-4gb-1`)
 
