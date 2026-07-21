@@ -1,4 +1,5 @@
 # coding: utf-8
+# cython: language_level=2
 #cython: cdivision=True
 
 #
@@ -22,7 +23,7 @@
 
 
 from libc.math cimport sqrt, abs
-from tomtom import NodoTomTom, ArcoTomTom
+from .tomtom import NodoTomTom, ArcoTomTom
 import cython
 from django.contrib.gis.geos import Point, GEOSGeometry, LineString
 from paline.models import StradaTomtom

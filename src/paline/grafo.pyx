@@ -1,4 +1,5 @@
 # coding: utf-8
+# cython: language_level=2
 # cython: profile=False
 
 #
@@ -25,7 +26,7 @@
 from copy import copy
 from datetime import datetime, timedelta
 import time
-import tratto
+from . import tratto
 try:
 	import cPickle as pickle
 except ImportError:  # Python 3
@@ -38,7 +39,7 @@ except ImportError:  # Python 3
 from contextlib import contextmanager
 from threading import Lock
 from pprint import pprint
-from geomath import distance
+from .geomath import distance
 """
 Classi per rappresentare un grafo astratto
 

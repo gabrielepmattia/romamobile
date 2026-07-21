@@ -1,3 +1,4 @@
+# cython: language_level=2
 #!/usr/bin/env python
 #coding:utf-8
 # Author:  mozman
@@ -8,7 +9,7 @@
 
 __all__ = ['cRBTree']
 
-from cwalker import cWalker
+from .cwalker import cWalker
 
 from cwalker cimport *
 from ctrees cimport *
