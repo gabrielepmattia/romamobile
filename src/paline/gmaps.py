@@ -19,7 +19,11 @@
 #    Roma mobile. If not, see http://www.gnu.org/licenses/.
 #
 
-import cgpolyencode as gpolyenc
+# Era cGPolyEncode, un binding C senza release Python 3. `polyline` e' puro
+# Python. Unica differenza misurata: cGPolyEncode scartava i vertici sotto una
+# soglia (~0.5% dei punti, stringa piu' corta dello 0.5%), polyline li tiene
+# tutti. Vedi scripts/check_polyline_equivalence.py.
+import polyline
 import uuid
 import settings
 
@@ -637,7 +641,6 @@ class Map(RPyCAllowRead):
 		max_y = center[1] + 1.5 * shift_v
 		
 		markers_str.append('size:small')
-		encoder = gpolyenc.GPolyEncoder()
 		
 		mcount = 1
 		for m in self.markers:
@@ -656,11 +659,13 @@ class Map(RPyCAllowRead):
 
 	
 		for pl in self.polylines:
-			e = encoder.encode(pl['points'])
+			# i punti sono (lon, lat), da geomath.gbfe_to_wgs84(): geojson=True dice
+			# a polyline di aspettarseli in quest'ordine invece di (lat, lon)
+			e = polyline.encode(pl['points'], geojson=True)
 			params.append("""path=color:0x%(color)s|weight:%(weight)s|enc:%(enc)s""" % {
 				'color': pl['color'][1:],
 				'weight': pl['thickness'],
-				'enc': e['points'],
+				'enc': e,
 			})
 	
 			

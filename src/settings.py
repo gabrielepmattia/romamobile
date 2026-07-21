@@ -64,6 +64,13 @@ GTFS_RT_URL = 'https://romamobilita.it/sites/default/files/rome_rtgtfs_vehicle_p
 GTFS_SA_URL = 'https://romamobilita.it/sites/default/files/rome_rtgtfs_service_alerts_feed.pb'
 GTFS_ST_CHECK_FOR_UPDATES = False
 
+# Usata da paline/gmaps.py per le mappe statiche di Google. Non era definita da
+# nessuna parte, quindi quel codice sollevava AttributeError appena veniva
+# raggiunto; con la stringa vuota le mappe statiche restano non funzionanti (Google
+# rifiuta le richieste senza chiave) ma il resto della pagina non si porta dietro
+# un errore. Per riattivarle, mettere la chiave in secrets/settings.json.
+GOOGLE_MAPS_API_KEY = secrets.get('google_maps_api_key', '')
+
 TROVALINEA_PATH_RETE = 'paline/rete'
 TROVALINEA_RETE_SPECIALE = os.path.join(TROVALINEA_PATH_RETE, 'special')
 

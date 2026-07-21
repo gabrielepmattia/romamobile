@@ -1,5 +1,5 @@
 beautifulsoup4==4.9.3  # ultima release che supporta ancora Python 2.7
-cGPolyEncode==0.1.1  # fornisce il modulo "cgpolyencode", usato da paline/gmaps.py
+polyline==1.4.0  # ultima release che supporta ancora Python 2.7
 Cython==0.29.37  # ultima serie che compila ancora per Python 2.7
 Django==1.5.12
 Pillow==2.3.0
