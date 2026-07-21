@@ -3242,13 +3242,12 @@ def carica_rete_su_grafo(r, g, retina=False, versione=None):
 			p.nodo_palina = n
 			g.add_nodo(n)
 	interscambio = {'TERMINI': None, 'BOLOGNA': None}
+	# Le paline sono quelle delle due banchine metro, come da feed GTFS attuale:
+	# gli id numerici usati in precedenza non esistono più
 	nodi_scambio = {
-		# 'PIRAMIDE': ['90151', '91151', 'BP8', 'BD15', '90221', '91221'],
-		# 'EUR MAGLIANA': ['90153', '91153', 'BP4', 'BD19'],
-		'EUR MAGLIANA': ['90153', '99153', 'C412073'],
-		'SAN PAOLO': ['90152', '99152', 'C672865'],
-		'PIRAMIDE': ['C251669', 'C074046', '90151']
-		# 'TEST': ['BP8', 'BD15', 'AP7', 'AD21'] # Ostiense <-> Porta Furba
+		'EUR MAGLIANA': ['BP4', 'BD19'],
+		'SAN PAOLO': ['BP6', 'BD17'],
+		'PIRAMIDE': ['BP8', 'BD15'],
 	}
 	for k in interscambio:
 		n = NodoInterscambio(k)
@@ -3264,8 +3263,8 @@ def carica_rete_su_grafo(r, g, retina=False, versione=None):
 				g.add_arco(a)
 				a = ArcoDiscesaInterscambio(n, np)
 				g.add_arco(a)
-			except:
-				traceback.print_exc()
+			except KeyError:
+				# La palina è sparita dal feed: l'interscambio resta parziale
 				print "Nodo scambio: palina %s non trovata" % id_palina
 	# Fermate
 	fermata_teletrasporto = None
