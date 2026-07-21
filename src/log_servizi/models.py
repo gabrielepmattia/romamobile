@@ -21,7 +21,10 @@
 
 from __future__ import print_function
 from django.db import models
-from xmlrpclib import Fault
+try:
+	from xmlrpclib import Fault
+except ImportError:  # Python 3
+	from xmlrpc.client import Fault
 import json
 from xmlrpchandler import dispatcher, rpc_handler
 from django.conf.urls.defaults import url

@@ -34,7 +34,10 @@ except ImportError:  # Python 3
 from . import views
 from paline import tratto
 from pprint import pprint
-import urlparse
+try:
+	from urlparse import parse_qs
+except ImportError:  # Python 3
+	from urllib.parse import parse_qs
 
 
 @jsonrpc_method('percorso_cerca', safe=True)
@@ -68,7 +71,7 @@ def percorso_cerca(
 
 @jsonrpc_method('urldecode', safe=True)
 def urldecode(request, urlparams):
-	d = urlparse.parse_qs(urlparams)
+	d = parse_qs(urlparams)
 	return dict([(k, d[k][0]) for k in d])
 
 @jsonrpc_method('percorso_get_params', safe=True)

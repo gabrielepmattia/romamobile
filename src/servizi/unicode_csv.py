@@ -21,7 +21,7 @@ class UnicodeCsvReader(object):
 
     def next(self):
         # read and split the csv row into fields
-        row = self.csv_reader.next() 
+        row = next(self.csv_reader) 
         # now decode
         return [cell.decode(self.encoding) for cell in row]
 

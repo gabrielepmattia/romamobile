@@ -33,7 +33,10 @@ import datetime
 import gettext
 from news import models as news
 from xhtml import middleware
-from xmlrpclib import Server
+try:
+	from xmlrpclib import Server
+except ImportError:  # Python 3
+	from xmlrpc.client import Server
 from urllib_transport import *
 from django.contrib import auth
 from django.http import HttpResponseRedirect

@@ -23,8 +23,10 @@
 #psyco.full()
 from __future__ import print_function
 import datetime
-import urllib
-import urllib2
+try:
+	import urllib2
+except ImportError:  # Python 3
+	import urllib.request as urllib2
 import traceback
 #from shapely.geometry import LineString, Point, MultiPoint
 #from IPython.Shell import IPShellEmbed

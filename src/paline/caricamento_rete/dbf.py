@@ -118,8 +118,8 @@ class Dbf:
 	def openString(self, aString):
 		'''public: open the receiver on a string of raw dbf data
 		jjk  08/24/98'''
-		import StringIO
-		dbfs = StringIO.StringIO(aString)
+		from io import BytesIO
+		dbfs = BytesIO(aString)
 		self.openOn(dbfs)
 		self.dbfName = ''
 		return(self)

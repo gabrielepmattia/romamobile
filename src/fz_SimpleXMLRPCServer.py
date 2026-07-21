@@ -100,9 +100,18 @@ server.handle_request()
 # Written by Brian Quinlan (brian@sweetapp.com).
 # Based on code written by Fredrik Lundh.
 
-import xmlrpclib
-from xmlrpclib import Fault
-import SocketServer
+try:
+	import xmlrpclib
+except ImportError:  # Python 3
+	import xmlrpc.client as xmlrpclib
+try:
+	from xmlrpclib import Fault
+except ImportError:  # Python 3
+	from xmlrpc.client import Fault
+try:
+	import SocketServer
+except ImportError:  # Python 3
+	import socketserver as SocketServer
 import BaseHTTPServer
 import sys
 import os

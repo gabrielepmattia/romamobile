@@ -60,7 +60,10 @@ from paline import models as palinemodels
 from pprint import pprint
 from parcheggi import models as parcheggi
 import re
-import urllib, urllib2
+try:
+	from urllib import urlencode
+except ImportError:  # Python 3
+	from urllib.parse import urlencode
 from hashlib import md5
 import traceback
 from servizi.views import sostituisci_preferiti
@@ -247,7 +250,7 @@ def infopoint_to_get_params(infopoint, da=True):
 	}
 	if da:
 		params['da'] = infopoint_address_to_string(infopoint['punti'][0]).encode('utf8')
-	return urllib.urlencode(params)
+	return urlencode(params)
 
 
 def _get_percorso(percorso):
@@ -981,7 +984,7 @@ def aggiungi_widget(request):
 	if f.is_bound and 'Submit' in request.GET:
 		cd = f.data
 		indirizzo=cd['indirizzo']
-		ind=urllib.urlencode({'a': indirizzo})
+		ind=urlencode({'a': indirizzo})
 		ctx['iframe']='<iframe src="http://127.0.0.1:8000/percorso/trovaci?%s" scrolling="no" style="width:400px; height:50px; border-radius: 20px; -webkit-border-radius:20px; -moz-border-radius:20px" frameborder="0" ></iframe>' %ind
 		ctx['indirizzo']=ind
 		return TemplateResponse(request, 'aggiungi_widget.html', ctx)

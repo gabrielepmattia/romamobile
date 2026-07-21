@@ -19,7 +19,10 @@
 #    Roma mobile. If not, see http://www.gnu.org/licenses/.
 #
 
-from xmlrpclib import Fault
+try:
+	from xmlrpclib import Fault
+except ImportError:  # Python 3
+	from xmlrpc.client import Fault
 
 XMLRPC = {
 	'XRE_EXC':					Fault(801, 'Eccezione generica'),

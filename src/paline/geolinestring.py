@@ -69,7 +69,7 @@ def distance_split(points, distances):
 	# print "Distances: ", distances
 	dist_iter = distances.__iter__()
 	try:
-		target_d = dist_iter.next()
+		target_d = next(dist_iter)
 	except StopIteration:
 		yield list(points)
 		points = []
@@ -87,7 +87,7 @@ def distance_split(points, distances):
 				d = target_d
 				op = mp
 				try:
-					target_d = dist_iter.next()
+					target_d = next(dist_iter)
 				except StopIteration:
 					target_d = None
 				current = [mp]

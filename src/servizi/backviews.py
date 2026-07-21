@@ -30,9 +30,15 @@ from servizi.views import get_fav, login_app_id_sito, delete_fav
 from datetime import datetime, timedelta, time, date
 from jsonrpc import jsonrpc_method
 from urllib_transport import *
-import xmlrpclib
+try:
+	import xmlrpclib
+except ImportError:  # Python 3
+	import xmlrpc.client as xmlrpclib
 import settings
-import urlparse
+try:
+	from urlparse import parse_qs
+except ImportError:  # Python 3
+	from urllib.parse import parse_qs
 from pprint import pprint
 import importlib
 from carpooling import models as carpooling
@@ -175,7 +181,7 @@ def _servizi_app_init(request, session_or_token, urlparams):
 			out['session_key'] = request.session.session_key
 
 	# Params decode
-	d = urlparse.parse_qs(urlparams)
+	d = parse_qs(urlparams)
 	out['params'] = dict([(k, d[k][0]) for k in d])
 
 	# User

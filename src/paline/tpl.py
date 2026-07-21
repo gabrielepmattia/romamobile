@@ -60,7 +60,10 @@ except ImportError:  # Python 3
 from mercury.models import Mercury, DaemonControl
 from risorse import models as risorse
 from ztl.views import Orari, orari_per_ztl
-import xmlrpclib
+try:
+	import xmlrpclib
+except ImportError:  # Python 3
+	import xmlrpc.client as xmlrpclib
 from . import tomtom
 from collections import defaultdict
 from pprint import pprint

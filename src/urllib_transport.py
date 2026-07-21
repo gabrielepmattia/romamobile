@@ -1,5 +1,11 @@
-import urllib2
-import xmlrpclib
+try:
+	import urllib2
+except ImportError:  # Python 3
+	import urllib.request as urllib2
+try:
+	import xmlrpclib
+except ImportError:  # Python 3
+	import xmlrpc.client as xmlrpclib
 
 class UrllibTransport(xmlrpclib.Transport):
 

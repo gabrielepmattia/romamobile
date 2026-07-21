@@ -45,7 +45,6 @@ from itertools import chain
 from django.utils.html import escape, conditional_escape
 from django.utils.safestring import mark_safe
 from PIL import Image, ImageDraw, ImageFont
-from StringIO import StringIO
 from django.http import HttpResponse
 import rpyc 
 import settings
@@ -55,12 +54,14 @@ from django.template.defaultfilters import date as datefilter
 from django.template.loader import render_to_string
 from django.views.defaults import server_error
 import re
-from urllib import quote
 from servizi import infopoint
 import string
 import pickle
 import os, os.path
-import xmlrpclib
+try:
+	import xmlrpclib
+except ImportError:  # Python 3
+	import xmlrpc.client as xmlrpclib
 from paline.geomath import gbfe_to_wgs84
 from xhtml.templatetags.format_extras import arrotonda_distanza
 from mercury.models import Mercury, Job

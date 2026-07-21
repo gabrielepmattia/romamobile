@@ -22,7 +22,6 @@
 from django.db import models, connections
 from django.contrib.gis.db import models as gismodels
 from django.contrib.gis.geos import Point, GEOSGeometry
-import urllib2
 import re
 import time
 from xml.dom import minidom

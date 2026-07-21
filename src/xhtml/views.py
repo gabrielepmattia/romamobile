@@ -26,9 +26,15 @@ import re
 from hashlib import md5
 from random import randint
 import struct
-import urllib2
+try:
+	import urllib2
+except ImportError:  # Python 3
+	import urllib.request as urllib2
 import time
-from urllib import unquote, quote
+try:
+	from urllib import unquote, quote
+except ImportError:  # Python 3
+	from urllib.parse import unquote, quote
 from Cookie import SimpleCookie, CookieError
 #from messaging import stdMsg, dbgMsg, errMsg, setDebugging
 import uuid

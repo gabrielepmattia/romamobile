@@ -24,7 +24,12 @@ from servizi.models import RicercaErrata
 from servizi.utils import ricapitalizza, contenttype2model
 from servizi.models import *
 import re
-import urllib, urllib2
+try:
+	import urllib2
+	from urllib import urlencode
+except ImportError:  # Python 3
+	import urllib.request as urllib2
+	from urllib.parse import urlencode
 from BeautifulSoup import BeautifulStoneSoup
 import xml.etree.ElementTree as ET 
 import pyproj
@@ -280,7 +285,7 @@ def geocode_place_google(request, composite_address):
 	# 3: register the opener globally
 	urllib2.install_opener(opener)
 	
-	f = urllib2.urlopen(u'http://maps.googleapis.com/maps/api/geocode/json?%s' % urllib.urlencode(params))
+	f = urllib2.urlopen(u'http://maps.googleapis.com/maps/api/geocode/json?%s' % urlencode(params))
 	geo = json.loads(f.read())
 	f.close()
 	results = geo['results']

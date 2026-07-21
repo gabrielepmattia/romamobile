@@ -35,7 +35,10 @@ from zipfile import ZipFile
 from servizi.utils import mysql2datetime, datetime2compact, multisplit, date2mysql, xmlrpc2datetime
 import os, os.path, shutil
 import settings
-import xmlrpclib
+try:
+	import xmlrpclib
+except ImportError:  # Python 3
+	import xmlrpc.client as xmlrpclib
 from paline import tpl
 import subprocess
 import paline.grafo as graph
