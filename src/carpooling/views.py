@@ -726,7 +726,7 @@ def feedback_richiedente(request, ricpk, feedback):
 		r = PassaggioRichiesto.objects.get(pk=ricpk, offerta__user=request.user)
 		r.imposta_feedback_richiedente(feedback)
 		return hist_redirect(request, '/carpooling/dettaglio_offerta/%s' % r.offerta.pk, msg="Grazie per il tuo feedback")
-	except Exception, e:
+	except Exception as e:
 		return messaggio(request, "Hai già lasciato il feedback per questo passaggio. Grazie.")
 	
 @controllo_diritti
@@ -736,7 +736,7 @@ def feedback_offerente(request, ricpk, feedback):
 		r = PassaggioRichiesto.objects.get(pk=ricpk, user=request.user)
 		r.imposta_feedback_offerente(feedback)
 		return hist_redirect(request, '/carpooling', msg="Grazie per il tuo feedback")
-	except Exception, e:
+	except Exception as e:
 		return messaggio(request, "Hai già lasciato il feedback per questo passaggio. Grazie.")
 
 @group_required('operatori')

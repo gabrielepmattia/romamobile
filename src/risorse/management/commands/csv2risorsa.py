@@ -203,7 +203,7 @@ class Command(BaseCommand):
 									else:
 										row.update({'x': str(res['x']), 'y': str(res['y'])})
 										geo_writer.writerow(row)
-								except Exception, e:
+								except Exception as e:
 									print("Eccezione")
 									traceback.print_exc()
 									error = True
@@ -229,7 +229,7 @@ class Command(BaseCommand):
 									x, y = float(row['x']), float(row['y'])
 								geom = Point(x, y, srid=3004)
 								funz(row, geom)									
-							except Exception, e:
+							except Exception as e:
 								traceback.print_exc()
 								error = True
 							if error:

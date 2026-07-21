@@ -269,7 +269,7 @@ def gruppo(request, id_gruppo):
 
 def filtraNone(arr):
 	# filtra i valori None da un array associativo, necessario per xmlrpc
-	for k, v in arr.iteritems():
+	for k, v in list(arr.items()):
 		if arr[k] is None:
 			arr[k] = ''
 	return arr
@@ -1037,7 +1037,7 @@ def _default(request, cerca, ctx, as_service, dett_paline=False):
 				return _disambigua(request, paline_extra=paline, nascondi_duplicati=True, ctx=ctx, as_service=as_service, dett_paline=dett_paline)
 			else:
 				ctx['errore'] = True
-		except Exception, e:
+		except Exception as e:
 			traceback.print_exc()
 			# Se uno dei servizi sta giù (Infopoint, paline vicine) omettiamo la ricerca per indirizzo
 			ctx['errore'] = True

@@ -27,7 +27,10 @@ from django.contrib.contenttypes import models as contenttypes
 from datetime import datetime, timedelta, time
 from utils import oggetto_con_min, oggetto_con_max, ora_breve, weekday2string, datetime2date, date2mysql
 from django.contrib.auth.models import User, Group
-import cPickle as pickle
+try:
+	import cPickle as pickle
+except ImportError:  # Python 3
+	import pickle
 import hashlib
 from django.core.cache import cache
 from contextlib import contextmanager

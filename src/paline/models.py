@@ -41,7 +41,10 @@ from django.template.defaultfilters import time as timefilter
 from django.utils.translation import ugettext as _
 from django.core.cache import cache
 import rpyc
-import cPickle as pickle
+try:
+	import cPickle as pickle
+except ImportError:  # Python 3
+	import pickle
 import random
 from time import sleep 
 import csv
@@ -414,7 +417,7 @@ class Palina(VersionatoPaline, Disabilitabile):
 					el2['carteggi'] = p.carteggio_quoz
 					arrivo = p.getArrivo()
 					el2['capolinea'] = arrivo['nome']
-				except Exception, e:
+				except Exception as e:
 					#e = errors.XMLRPC['XRE_NO_PERCORSO']
 					#e.message = "Percorso inesistente: %s, %s" % (type(l['id_percorso']), str(l['id_percorso']))
 					#raise e

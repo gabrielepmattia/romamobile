@@ -26,7 +26,10 @@ import percorso.views
 import settings
 import random
 from mercury.models import Mercury
-import cPickle as pickle
+try:
+	import cPickle as pickle
+except ImportError:  # Python 3
+	import pickle
 from parcheggi import models as parcheggi
 from servizi.utils import model2contenttype
 

@@ -262,7 +262,7 @@ def app_login(request, temp_token):
 				login(request, u)
 				carpooling.verifica_abilitazione_utente(u)
 			return 'OK'
-	except Exception, e:
+	except Exception as e:
 		pass
 	return 'KO'
 

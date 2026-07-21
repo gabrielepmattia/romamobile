@@ -51,7 +51,10 @@ from carpooling.models import get_vincoli
 from servizi import infopoint
 import settings
 from copy import deepcopy, copy
-import cPickle as pickle
+try:
+	import cPickle as pickle
+except ImportError:  # Python 3
+	import pickle
 from paline import mapstraction, gmaps, tratto
 from paline import models as palinemodels
 from pprint import pprint

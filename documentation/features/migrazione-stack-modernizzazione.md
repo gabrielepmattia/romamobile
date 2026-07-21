@@ -102,9 +102,12 @@ stack attuale (Py2/Django1.5).
 - [ ] Automatizzare le trasformazioni meccaniche (`futurize`/`2to3` mirati):
   - [x] `print` statement → `print()` funzione + `from __future__ import print_function`
         (40 file backend; frontend `percorso/js/` escluso, è Fase 3).
-  - [ ] `iteritems` / `itervalues` / `has_key` / `xrange`
-  - [ ] `except X, e:` → `except X as e:`
-- [ ] Normalizzare `cPickle`→`pickle` (via `six.moves`), `Queue`→`queue`.
+  - [x] `iteritems` / `iterkeys` / `has_key` / `xrange`
+  - [x] `except X, e:` → `except X as e:`
+  - [x] `raise X, msg` → `raise X(msg)`
+  - [x] literal `long` (`123L`) e `TabError` (mix tab/spazi)
+- [x] Normalizzare `cPickle`→`pickle`, `Queue`→`queue` (via `try/except ImportError`,
+      senza introdurre dipendenze nuove: nessun rebuild immagine richiesto).
 - [ ] Affrontare a mano i punti str/bytes/`unicode` e i `cmp=` (→ `key=`).
 - [ ] Ricompilare le estensioni `.pyx` con Cython moderno; correggere le differenze
       di tipizzazione emerse.
@@ -206,5 +209,34 @@ test manuali) è a carico dell'ambiente di deploy dopo ogni batch.
     `run_job.py` che confondeva il posizionamento del future-import.
   - Verifica: `lib2to3 -f print` sull'intero backend non segnala più alcuno
     statement da convertire né ParseError.
-  - ⚠️ Da validare nel deploy: riavvio `giano` + smoke test su `/metro`,
-    ricerca linee, cerca percorso.
+  - ✅ Validato in deploy (`hetzner-4gb-1`, 2026-07-21): vedi sotto.
+- **Fase 1 · batch 2 — sintassi Py2/Py3 comune.** Trasformazioni meccaniche, tutte
+  valide **sia** su Py2.7 **sia** su Py3. 38 file toccati (frontend `percorso/js/`
+  sempre escluso):
+  - `except X, e:` → `except X as e:` — 30 punti in 18 file.
+  - `raise X, msg` → `raise X(msg)` — 18 punti nei due `dbf.py`.
+  - `.has_key(k)` → `k in d` (3 punti), `.iteritems()` → `list(.items())`,
+    `.iterkeys().next()` → `next(iter(...))`.
+  - `xrange` in `paline/osm.py`: shim locale `xrange = range` sotto `except
+    NameError`, per non perdere la lazyness su Py2 in `load_graph`.
+  - `import cPickle as pickle` → `try/except ImportError` (19 file, inclusi
+    `grafo.pyx` e `geocoder.pyx`); idem per `Queue`/`queue` (5 file). Niente `six`:
+    evita di toccare `requirements.txt` e quindi il rebuild dell'immagine.
+  - Rimosso un doppio `import pickle` ridondante in `carpooling/models.py`.
+  - `13800207392955L` → senza suffisso `L` (`paline/tomtom.py`) e `TabError`
+    (mix tab/spazi) nei due `binnum.py`.
+  - **Verifica:** `python -m compileall` sull'intero backend passa pulito in Docker
+    **sia** con `python:2.7-slim` **sia** con `python:3.11-slim`. Il backend non ha
+    più errori di *sintassi* Py3 (restano quelli semantici: `unicode`, str/bytes,
+    import impliciti, Django 1.5).
+  - ⚠️ Da validare nel deploy: `grafo.pyx`/`geocoder.pyx` sono compilati a runtime
+    da `pyximport`, quindi il riavvio di `giano` li ricompila.
+
+### Validazione deploy 2026-07-21 (`hetzner-4gb-1`)
+
+- Ambiente: `~/apps/_romamobile/repo/romamobile`, stack compose `romamobile`
+  (`postgis` + `web` + `giano`), reverse proxy Traefik su `rm.gpm.name`.
+- Il server era fermo a `6ce20d5`, quindi **senza** il fix degli alert GTFS: `/metro`
+  rispondeva **500**. Confermato prima dell'aggiornamento.
+- `git merge --ff-only origin/master` → `d5200f0`. Il codice è montato via bind
+  (`./src:/app`), perciò non serve rebuild: basta riavviare `giano` e `web`.

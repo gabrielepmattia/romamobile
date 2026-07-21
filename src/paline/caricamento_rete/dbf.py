@@ -283,7 +283,7 @@ def DbfFieldDefFromRawData(rawFieldDef, startPos):
 	elif (fType=='L'): fd = DbfLogicalFieldDef()
 	elif (fType=='M'): fd = DbfMemoFieldDef()
 	elif (fType=='D'): fd = DbfDateFieldDef()
-	else: raise ValueError, 'Unknown Field Type: '+fType
+	else: raise ValueError('Unknown Field Type: '+fType)
 	fd.fromRawData(rawFieldDef, startPos)
 	return(fd)
 
@@ -337,7 +337,7 @@ class DbfFieldDef:
 	def typeCode(self):
 		'''Public: answer one-character type code of the receiver
 		jjk  02/18/98'''
-		raise NameError, 'typeCode() must be implemented by subclass'
+		raise NameError('typeCode() must be implemented by subclass')
 
 	def fieldInfo(self):
 		'''Public: answer tuple of basic info about the receiver
@@ -353,17 +353,17 @@ class DbfFieldDef:
 	def decodeValue(self, rawval):
 		'''system: answer field value decoded from raw value string 
 		jjk  02/20/98'''
-		raise NameError, 'decodeValue() must be implemented by subclass'
+		raise NameError('decodeValue() must be implemented by subclass')
 
 	def encodeValue(self, fieldValue):
 		'''system: answer raw data string encoded from a field value
 		jjk  02/19/98'''
-		raise NameError, 'encodeValue() must be implemented by subclass'
+		raise NameError('encodeValue() must be implemented by subclass')
 
 	def defaultValue(self):
 		'''Public: answer the default value for fields defined by the receiver
 		jjk  02/19/98'''
-		raise NameError, 'defaultValue() must be implemented by subclass'
+		raise NameError('defaultValue() must be implemented by subclass')
 
 class DbfCharacterFieldDef(DbfFieldDef):
 
@@ -447,7 +447,7 @@ class DbfLogicalFieldDef(DbfFieldDef):
 		if (rawval=='?'): return(-1)
 		if (rawval in 'YyTt'): return(1)
 		if (rawval in 'NnFf'): return(0)
-		raise ValueError, 'invalid logical value: '+rawval
+		raise ValueError('invalid logical value: '+rawval)
 
 	def defaultValue(self):
 		'''Public: answer the default value for fields defined by the receiver
@@ -554,7 +554,7 @@ class DbfRecord:
 		'''system: write the receiver data to its recordIndex
 		jjk  02/19/98'''
 		if (self.recordIndex<0): 
-			raise IndexError, 'Dbf record numbers must be >=0'
+			raise IndexError('Dbf record numbers must be >=0')
 		len = self.dbf.header.recordLength
 		pos = self.dbf.header.headerLength+(self.recordIndex*len)
 		rawData = self.asRawData()
@@ -565,9 +565,9 @@ class DbfRecord:
 		'''system: read the receiver data from the specified index
 		jjk  02/19/98'''
 		if (recordIndex<0): 
-			raise IndexError, 'Dbf record numbers must be >=0'
+			raise IndexError('Dbf record numbers must be >=0')
 		if (recordIndex>=self.dbf.header.recordCount):
-			raise IndexError, 'Only '+str(self.dbf.header.recordCount)+' records in Dbf'
+			raise IndexError('Only '+str(self.dbf.header.recordCount)+' records in Dbf')
 		len = self.dbf.header.recordLength
 		pos = self.dbf.header.headerLength+(recordIndex*len)
 		self.dbf.dbfStream.seek(pos)

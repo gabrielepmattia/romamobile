@@ -31,7 +31,7 @@ Jeff Kunce <kuncej@mail.conservation.state.mo.us>
 def integers_from_char1(int_string):
 	# return list of integers decoded from 1-byte-format string
 	# jjk  12/08/95
-        lst = []
+	lst = []
 	pos = 0
 	while (pos < len(int_string)):
 		lst.append(integer_from_char1(int_string[pos]))
@@ -46,7 +46,7 @@ def integer_from_char1(int_string):
 def integers_from_Intel2(int_string):
 	# return list of integers decoded from 2-byte-intel-format string
 	# jjk  12/08/95
-        lst = []
+	lst = []
 	pos = 2
 	while (pos <= len(int_string)):
 		lst.append(integer_from_Intel2(int_string[pos-2:pos]))

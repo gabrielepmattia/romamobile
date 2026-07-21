@@ -90,6 +90,6 @@ class Command(BaseCommand):
 						except:
 							pass
 
-			except Exception, e:
+			except Exception as e:
 				print(traceback.format_exc())
 				sleep(5)

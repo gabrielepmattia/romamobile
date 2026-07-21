@@ -26,7 +26,7 @@ def get_model_database(model):
 		return model.database_name
 	except:
 		pass
-	if settings.DATABASE_APPS_MAPPING.has_key(model._meta.app_label):
+	if model._meta.app_label in settings.DATABASE_APPS_MAPPING:
 		return settings.DATABASE_APPS_MAPPING[model._meta.app_label]
 	return None
 

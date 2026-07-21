@@ -26,9 +26,15 @@ from copy import copy
 from datetime import datetime, timedelta
 import time
 import tratto
-import cPickle as pickle
+try:
+	import cPickle as pickle
+except ImportError:  # Python 3
+	import pickle
 cimport cython
-from Queue import Queue
+try:
+	from Queue import Queue
+except ImportError:  # Python 3
+	from queue import Queue
 from contextlib import contextmanager
 from threading import Lock
 from pprint import pprint

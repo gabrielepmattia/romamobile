@@ -151,7 +151,7 @@ class ServerVersione(SimpleXMLRPCDispatcher):
 		def decorator(f):
 			try:
 				nomi_parametri = f.saved_argspec[0]				
-			except AttributeError, e:
+			except AttributeError as e:
 				nomi_parametri = inspect.getargspec(f)[0]
 			def g(*args):
 				self.refresh()

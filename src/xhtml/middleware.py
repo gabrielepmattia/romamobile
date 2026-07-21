@@ -304,9 +304,9 @@ class Middleware:
 	
 class SessionCookieMiddleware(object):
 	def process_request(self, request):
-		if not request.COOKIES.has_key(settings.SESSION_COOKIE_NAME):
+		if settings.SESSION_COOKIE_NAME not in request.COOKIES:
 			request.does_not_accept_cookies = True
-			if request.GET.has_key(settings.SESSION_COOKIE_NAME):
+			if settings.SESSION_COOKIE_NAME in request.GET:
 				request.COOKIES[settings.SESSION_COOKIE_NAME] = request.GET[settings.SESSION_COOKIE_NAME]
 		else:
 			request.does_not_accept_cookies = False

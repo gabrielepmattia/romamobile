@@ -209,12 +209,12 @@ class Crud(object):
 			else:
 				try:
 					return datetime.datetime.strptime(value, '%d/%m/%Y'), False
-				except Exception, e:
+				except Exception as e:
 					raise ItemException('Data non valida')
 		elif type == 'time':
 			try:
 				return datetime2time(datetime.datetime.strptime(value, '%H:%M'))
-			except Exception, e:
+			except Exception as e:
 				raise ItemException('Ora non valida')
 		elif type == 'address':
 			f = self.fields_dict[name]
@@ -509,7 +509,7 @@ class Crud(object):
 			}
 		else:
 			return {
-				'value': choices.iterkeys().next(),
+				'value': next(iter(choices)),
 				'choices': choices
 			}
 

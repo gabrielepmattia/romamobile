@@ -26,8 +26,14 @@ import rpyc
 from rpyc.utils.server import ThreadedServer
 import os, subprocess, signal
 from threading import Thread
-from Queue import Queue, Empty
-import cPickle as pickle
+try:
+	from Queue import Queue, Empty
+except ImportError:  # Python 3
+	from queue import Queue, Empty
+try:
+	import cPickle as pickle
+except ImportError:  # Python 3
+	import pickle
 from django.db.models import Q, F
 from time import sleep
 from datetime import date, time, datetime, timedelta
@@ -383,7 +389,7 @@ class Watchdog(Thread):
 					assert(c.root.ping() == 'OK')
 					c.close()
 					print("Test ok")
-				except Exception, e:
+				except Exception as e:
 					print(e)
 					print("Test KO")
 					if s.daemon is not None:

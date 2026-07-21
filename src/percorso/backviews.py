@@ -27,7 +27,10 @@ from datetime import datetime, timedelta, time, date
 from jsonrpc import jsonrpc_method
 from copy import copy
 import rpyc
-import cPickle as pickle
+try:
+	import cPickle as pickle
+except ImportError:  # Python 3
+	import pickle
 import views
 from paline import tratto
 from pprint import pprint

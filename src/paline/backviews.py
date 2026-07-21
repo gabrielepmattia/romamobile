@@ -33,7 +33,10 @@ from datetime import datetime, timedelta, time, date
 from django.template.defaultfilters import date as datefilter, urlencode
 from jsonrpc import jsonrpc_method
 import rpyc
-import cPickle as pickle
+try:
+	import cPickle as pickle
+except ImportError:  # Python 3
+	import pickle
 import gmaps
 import views
 from paline.views import paline7, _dettaglio_paline, _dettaglio_paline_app
@@ -149,7 +152,7 @@ def stato_traffico(request, verso):
 			mappa['markers'].extend(m['markers'])
 			mappa['polylines'].extend(m['polylines'])
 			mappa['sublayers'].append(('traffico_bus', id_percorso))			
-		except Exception, e:
+		except Exception as e:
 			logging.error("Mappa centrale: Errore percorso %s" % id_percorso)
 			
 	out = {

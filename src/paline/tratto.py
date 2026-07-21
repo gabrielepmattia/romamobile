@@ -28,7 +28,10 @@ from geomath import gbfe_to_wgs84, segment_point_dist, distance, piede_perpendic
 from django.utils.translation import ugettext as _
 from django.template.defaultfilters import date as datefilter
 from pprint import pprint
-import cPickle as pickle
+try:
+	import cPickle as pickle
+except ImportError:  # Python 3
+	import pickle
 
 class Tratto(RPyCAllowRead):
 	def __init__(self, parent, tempo):

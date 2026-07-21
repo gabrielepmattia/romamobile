@@ -97,7 +97,7 @@ class Command(BaseCommand):
 				print("Richiedo serializzazione")
 				Trovalinea.rete.deserializza_dinamico_db()
 				print("Serializzazione richiesta effettuata")
-			except Exception, e:
+			except Exception as e:
 				print("Serializzazione richiesta fallita")
 		
 		giano_daemon.set_ready()

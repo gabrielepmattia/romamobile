@@ -90,7 +90,7 @@ def carica_rete_auto():
 		subj = u"Rete caricata con successo"
 		msg = u"Buone notizie: la rete è stata caricata con successo su muoversiaroma.it\n"
 		msg += u"La rete è attiva a partire dal seguente orario: %s" % datetime2mysql(versione)
-	except Exception, e:
+	except Exception as e:
 		subj = u"Errore caricamento rete"
 		msg = u"Muoversiaroma.it non ha potuto caricare la rete a causa del seguente errore:\n\n"
 		msg += traceback.format_exc()
@@ -136,7 +136,7 @@ def carica_rete(no_load=False, no_validate=False):
 			g.deserialize(os.path.join(settings.TROVALINEA_PATH_RETE, '%s.v3.dat' % settings.GRAPH))
 			tpl.carica_rete_su_grafo(r, g, False, versione=versione)
 		
-		except Exception, e:
+		except Exception as e:
 			print("Validazione fallita")
 			traceback.print_exc()
 			v = VersionePaline.objects.ultima()
@@ -198,7 +198,7 @@ def carica_rete_incrementale(no_load=False, no_validate=False):
 			g.deserialize(os.path.join(settings.TROVALINEA_PATH_RETE, '%s.v3.dat' % settings.GRAPH))
 			tpl.carica_rete_su_grafo(r, g, False, versione=versione)
 
-		except Exception, e:
+		except Exception as e:
 			print("Validazione fallita")
 			traceback.print_exc()
 			v = VersionePaline.objects.ultima()

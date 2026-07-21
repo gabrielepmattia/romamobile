@@ -42,6 +42,12 @@ from tratto import TrattoRoot, TrattoPiedi, TrattoPiediArco, TrattoBici, TrattoB
 from tratto import TrattoAuto, TrattoAutoArco
 from copy import copy
 
+try:
+	xrange
+except NameError:  # Python 3: range e' gia' lazy
+	xrange = range
+
+
 class Repository(object):
 	def __init__(self):
 		object.__init__(self)
@@ -433,7 +439,7 @@ def retrieve2(left, bottom, right, top, start=0):
 		f.close()
 		u.close()
 		return start + 1
-	except Exception, e:
+	except Exception as e:
 		print("Exception, recurring")
 		traceback.print_exc()
 		f.close()

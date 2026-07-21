@@ -135,7 +135,7 @@ def send_request_to_google_analytics(utm_url, request):
 	contents = urllib2.urlopen(rq).read()
 	# dbgMsg("success")
 	"""
-	except Exception, e:
+	except Exception as e:
 		errMsg("fail: %s" % utm_url)
 		if environ['GET'].get('utmdebug'):
 			raise Exception("Error opening: %s" % utm_url)

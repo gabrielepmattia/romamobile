@@ -31,7 +31,10 @@ import codecs
 from grafo import Nodo, Arco, Grafo
 from geomath import wgs84_to_gbfe
 import shapereader
-import cPickle as pickle
+try:
+	import cPickle as pickle
+except ImportError:  # Python 3
+	import pickle
 import geomath
 import math
 from tratto import TrattoRoot, TrattoPiedi, TrattoPiediArco, TrattoBici, TrattoBiciArco, TrattoAutoAttesaZTL
@@ -438,9 +441,9 @@ def chrono():
 		print("Elapsed: %s" % (str(now - chrono_old),))
 	chrono_old = now
 	
-id_via_ostiense = (11, 13800207392955L)
-id_via_vasi_old = (11, 13800207577174L)
-id_via_vasi = (11, 13800205535178L)
+id_via_ostiense = (11, 13800207392955)
+id_via_vasi_old = (11, 13800207577174)
+id_via_vasi = (11, 13800205535178)
 id_raggiungibilita_osm = (11, 306048898) #(11, 246164532)
 
 def prepara_autocompletamento(cancella=False):

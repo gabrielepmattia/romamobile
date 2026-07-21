@@ -154,7 +154,7 @@ def geocode_place_infotpdati(request, composite_address):
 				'nnp': '',
 			}
 			return out
-		except Exception, e:
+		except Exception as e:
 			return {'stato': 'Error'}
 
 	address, streetno, place = decomponi_indirizzo_place(ricapitalizza(composite_address))
@@ -331,7 +331,7 @@ def geocode_place_infotp(request, composite_address):
 				'nnp': '',
 			}
 			return out
-		except Exception, e:
+		except Exception as e:
 			return {'stato': 'Error'}
 	
 	address, streetno, place = decomponi_indirizzo_place(ricapitalizza(composite_address))
@@ -423,7 +423,7 @@ def geocode_place(request, address, geocoder=DEFAULT_GEOCODER):
 				'lat': lat,
 			}
 			return out
-		except Exception, e:
+		except Exception as e:
 			return {'stato': 'Error'}
 	elif address.startswith('fermata:'):
 		id_palina = address[8:]

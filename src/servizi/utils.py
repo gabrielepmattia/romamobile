@@ -46,8 +46,15 @@ from contextlib import contextmanager
 import settings
 import os, os.path, shutil
 import tempfile
-import threading, Queue
-import cPickle as pickle
+import threading
+try:
+	import Queue as queue
+except ImportError:  # Python 3
+	import queue
+try:
+	import cPickle as pickle
+except ImportError:  # Python 3
+	import pickle
 import re
 from copy import deepcopy
 from base64 import b64encode, b64decode
@@ -536,8 +543,8 @@ class FunctionInThreadWorker(threading.Thread):
 class FunctionInThread(object):
 	def __init__(self, nmax):
 		object.__init__(self)
-		self.tasks = Queue.Queue()
-		self.tokens = Queue.Queue()
+		self.tasks = queue.Queue()
+		self.tokens = queue.Queue()
 		self.workers = []
 		for i in range(nmax):
 			self.tokens.put("Token")

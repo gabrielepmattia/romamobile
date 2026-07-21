@@ -24,7 +24,10 @@ from bt import AVLTree as Avl
 import pyximport; pyximport.install()
 from models import *
 from datetime import datetime, timedelta, time, date
-import Queue
+try:
+	import Queue as queue
+except ImportError:  # Python 3
+	import queue
 from threading import Thread, Lock
 from grafo import Arco, Nodo, Grafo, DijkstraPool
 import shapefile
@@ -50,7 +53,10 @@ from django.db.models import Avg, Max, Min, Count, F
 import os, os.path
 from floatingvehicle import FVPath
 from constance import config
-import cPickle as pickle
+try:
+	import cPickle as pickle
+except ImportError:  # Python 3
+	import pickle
 from mercury.models import Mercury, DaemonControl
 from risorse import models as risorse
 from ztl.views import Orari, orari_per_ztl
@@ -1657,7 +1663,7 @@ class Rete(object):
 					self.deserializza_dinamico_interno(r)
 				else:
 					print("Tipo %s non riconosciuto" % t)
-			except Exception, e:
+			except Exception as e:
 				print(e)
 
 	def deserializza_dinamico_veicoli(self, res):
@@ -1687,7 +1693,7 @@ class Rete(object):
 						logging.error('Errore aggiornamento posizione veicolo: %s' % traceback.format_exc())
 				elif t == 'Rete':
 					self.deserializza_dinamico_interno(r)
-			except Exception, e:
+			except Exception as e:
 				print(e)
 
 		self.invalida_bus_obsoleti()
@@ -2504,7 +2510,7 @@ class Aggiornatore(Thread):
 				# 	map_id_veicolo.map_veicoli(self.rete)
 				# 	print "Mapping id veicoli completato"
 
-			except Exception, e:
+			except Exception as e:
 				logging.error(traceback.format_exc())
 		print("Stoppato")
 
@@ -3396,7 +3402,7 @@ def carica_rete_su_grafo(r, g, retina=False, versione=None):
 			try:
 				print(a, a.eid)
 				g.rm_arco(g.archi[a.eid])
-			except Exception, e:
+			except Exception as e:
 				logging.error(u'Arco rimosso %s non trovato', a.descrizione)
 
 	# Orari Ferrovie del Lazio

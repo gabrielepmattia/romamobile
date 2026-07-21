@@ -25,12 +25,14 @@ from django.db.models import Avg, Sum
 from django.contrib.auth.models import User, Group
 from django.template.defaultfilters import date as datefilter
 from datetime import date, time, datetime, timedelta
-import cPickle as pickle
+try:
+	import cPickle as pickle
+except ImportError:  # Python 3
+	import pickle
 import base64
 from django.utils.translation import ugettext as _
 from autenticazione.models import Telefono
 from mercury.models import Mercury
-import cPickle as pickle
 import rpyc
 import settings
 from constance import config

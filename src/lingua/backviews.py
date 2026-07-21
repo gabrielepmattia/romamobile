@@ -8,7 +8,10 @@ from jsonrpc import jsonrpc_method
 from paline import tratto
 from copy import copy
 import rpyc
-import cPickle as pickle
+try:
+	import cPickle as pickle
+except ImportError:  # Python 3
+	import pickle
 import views
 from pprint import pprint
 

@@ -41,12 +41,18 @@ from servizi.utils import datetime2mysql, mysql2datetime, model2contenttype, con
 from servizi.autocomplete import Autocomplete
 import settings
 from threading import Thread, Lock 
-from Queue import PriorityQueue, Queue
+try:
+	from Queue import PriorityQueue, Queue
+except ImportError:  # Python 3
+	from queue import PriorityQueue, Queue
 from time import sleep
 from paline import models as paline
 from carpooling import models as carpoolingmodels
 from paline.gtfs_rt_upload import gtfs_realtime_uploader
-import cPickle as pickle
+try:
+	import cPickle as pickle
+except ImportError:  # Python 3
+	import pickle
 from IPython import embed
 from copy import copy, deepcopy
 import logging

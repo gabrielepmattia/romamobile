@@ -30,7 +30,10 @@ import gis.models as gis
 from pprint import pprint
 import traceback
 import settings
-import cPickle as pickle
+try:
+	import cPickle as pickle
+except ImportError:  # Python 3
+	import pickle
 import os, os.path
 
 cdef extern from "stdlib.h":

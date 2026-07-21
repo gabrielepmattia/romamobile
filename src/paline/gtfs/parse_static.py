@@ -20,7 +20,10 @@ import settings
 from pprint import pprint
 import traceback
 import json
-import cPickle as pickle
+try:
+	import cPickle as pickle
+except ImportError:  # Python 3
+	import pickle
 import os
 import csv
 
