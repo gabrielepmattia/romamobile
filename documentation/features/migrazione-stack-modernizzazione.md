@@ -75,7 +75,8 @@ progetto e va trattato come progetto indipendente dal backend.
 | `Cython==0.23.4` | Cython moderno | ✅ batch 7 |
 | `pyproj==1.9.5.1` | `pyproj` 2.2.2 (ultima con Py2) | ✅ batch 9 |
 | `rpyc==3.3.0` | RPyC attuale |
-| `django-json-rpc`, `django-constance`, `gtfs-realtime-bindings==0.0.6` | versioni correnti |
+| `django-json-rpc`, `django-constance` | versioni correnti | Fase 2 |
+| `protobuf` / `gtfs-realtime-bindings` | ultime con Py2 | ✅ batch 11 |
 | `Django==1.5.12` | Django LTS | Fase 2 |
 
 ### Dipendenze ancora da affrontare, e cosa comporta ciascuna
@@ -84,7 +85,7 @@ progetto e va trattato come progetto indipendente dal backend.
 |---|---|
 | ~~`pyproj==1.9.5.1`~~ | ✅ batch 9. Il timore sull'API era mal riposto: cambia `pyproj.transform()`, che `geomath` non chiama mai. Il rischio vero era sotto, PROJ 4 → PROJ 6; misurato nullo. |
 | `rpyc==3.3.0` | La 4.x supporta Py3 ma cambia il protocollo: `web` e `giano` vanno aggiornati **insieme**, non uno alla volta. Unico punto della migrazione che non è incrementale. |
-| `gtfs-realtime-bindings==0.0.6` | Legata alla versione di `protobuf`; da muovere insieme a quella. |
+| ~~`gtfs-realtime-bindings==0.0.6`~~ | ✅ batch 11, insieme a `protobuf`. Attenzione: non era neutro — le 0.0.7 riconoscono `occupancy_status = 7` che le 0.0.6 scartavano. |
 | `django-json-rpc`, `django-constance`, `django-simple-captcha`, `django-redis` | Versioni vincolate a Django: si muovono in Fase 2. Nota: `django-simple-captcha 0.5.1` dichiara già `Django>=1.7`, e pip lo segnala a ogni build. |
 | `Pillow==2.3.0`, `lxml==3.3.3`, `requests==2.9.1`, `redis==2.10.5`, `pytz==2015.7` | Nessun ostacolo noto: hanno tutte versioni Py3. Aggiornabili quando serve. |
 
@@ -593,6 +594,47 @@ test manuali) è a carico dell'ambiente di deploy dopo ogni batch.
     0 falliti; **pyflakes non segnala più alcun nome non definito** in tutto il
     backend. Nessuna modifica a `requirements.txt`, quindi nessun rebuild: solo
     bind mount e restart.
+
+- **Fase 1 · batch 11 — `protobuf` 3.11.2 → 3.17.3 e `gtfs-realtime-bindings`
+  0.0.6 → 0.0.7.** Ultime release con Python 2.7 (la 3.18 di protobuf lo droppa,
+  e `gtfs-realtime-bindings` 1.0.0 è solo Py3).
+  - **Non è un aggiornamento neutro, e il test di caratterizzazione è ciò che
+    l'ha scoperto.** Dando lo stesso feed catturato ai due stack, **103 veicoli
+    su 920** cambiano: il feed porta `occupancy_status = 7`
+    (`NO_DATA_AVAILABLE`), un valore aggiunto allo standard **dopo** le bindings
+    0.0.6. Quelle vecchie non lo conoscevano, lo trattavano come enum sconosciuto
+    e lo scartavano, quindi il campo risultava assente; le 0.0.7 lo restituiscono.
+  - **Sarebbe stata una regressione visibile.** `decode_occupation_status` manda
+    nel secchio "molto affollato" tutto ciò che è `>= 4`, quindi quei 103 veicoli
+    avrebbero mostrato l'icona dei tre omini accanto alla scritta *"Nessun dato
+    sulla disponibilità di posti"*. La mappa delle etichette **conosceva già** il
+    7; era solo il calcolo dell'icona a non saperlo.
+  - Corretto alla sorgente con un `_occupancy()` in `gtfs/realtime.py`: il 7
+    significa letteralmente "nessun dato", e `None` è come questo codice ha
+    sempre scritto quel concetto — così resta una sola rappresentazione per una
+    sola cosa. Con la correzione, l'output applicativo dei due stack è
+    **identico** su tutto il feed (211716 byte di riassunto confrontati).
+  - **Annotato, non corretto:** il test è sulla *verità* del valore, quindi anche
+    `EMPTY` (0) diventa `None`. Oggi non si vede perché il feed di Roma non manda
+    mai 0, ma è una perdita di informazione preesistente.
+  - **Rimossi `paline/gtfs_rt.py` e il generato `paline/gtfs_pb2.py`.** Sono
+    morti — in `tpl.py` sia l'import sia tutte le chiamate sono commentate — e
+    costavano due cose vere:
+    - `gtfs_pb2.py` è generato da un `protoc` dell'era 3.0–3.5, che **protobuf
+      3.20+ rifiuta di caricare**: sarebbe stato un bloccante per il passaggio a
+      Python 3.
+    - Registra gli stessi messaggi `transit_realtime.*` delle bindings ufficiali,
+      quindi **importare entrambi nello stesso processo fallisce** (verificato).
+      È esattamente il motivo per cui `check_imports` deve forkare a ogni modulo.
+  - **Verifica:** `check_imports` **200 moduli** (due in meno, i due rimossi),
+    0 falliti; equivalenza del feed IDENTICI; `giano` `RestartCount=0` su 70 s e
+    `Aggiornamento arrivi completato!!` nel log; icone di occupazione renderizzate
+    correttamente (`people_1/2/3`, nessuna `people_None.png`).
+  - **Preesistente, non toccato:** nel log di `giano` compaiono `KeyError` in
+    `costruisci_percorso_intersezione` (percorsi citati dal feed ma assenti nella
+    rete caricata). Sono in `atacmobile.log` fin dalla riga 2 di un file da
+    4,8 MB, quando quel codice stava a `tpl.py:2001`: vengono da lontano e
+    meritano un'analisi a parte.
 
 ### Validazione deploy 2026-07-22 (`hetzner-4gb-1`)
 
