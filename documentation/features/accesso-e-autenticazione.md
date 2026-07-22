@@ -144,7 +144,83 @@ l'accesso invece di aprirlo. Se un giorno un secondo servizio finirà dietro
 Authelia, servirà distinguere per utente o gruppo con il campo `subject:` —
 altrimenti chiunque sia nel file vedrà entrambi.
 
-## 7. Rollback
+## 7. Protezione dal brute force
+
+Due livelli, che contano cose diverse. Servono entrambi: da soli hanno ciascuno
+un punto cieco che l'altro copre.
+
+### Livello 1 — `regulation` interna di Authelia (per utente)
+
+```yaml
+regulation:
+  max_retries: 5
+  find_time: 2 minutes
+  ban_time: 10 minutes
+```
+
+**Verificato:** dopo 5 password sbagliate sullo stesso utente, anche la password
+**giusta** viene rifiutata per 10 minuti. Nel log:
+
+```
+Unsuccessful 1FA authentication attempt by user 'x' and they are banned until ...
+```
+
+**Punto cieco:** conta *per utente*. Chi prova un nome utente diverso a ogni
+tentativo non incontra mai il contatore, e un utente inesistente non ne ha
+nemmeno uno.
+
+### Livello 2 — jail fail2ban `authelia-auth` (per IP)
+
+Copre esattamente quel punto cieco.
+
+**La jail `traefik-auth` che già esisteva NON bastava**, ed è la parte non
+ovvia: il suo filtro pretende uno username valorizzato nel secondo campo
+dell'access log (`usrre-normal = (?!- )`), che Traefik riempie **solo** con la
+BasicAuth. Le richieste verso Authelia hanno `-` in quel campo:
+
+```
+<IP> - - [...] "POST /api/firstfactor HTTP/2.0" 401 74 ... "authelia-secure@docker"
+```
+
+Finché `rm.gpm.name` stava dietro `protected@file` i suoi 401 portavano lo
+username ed erano intercettabili. **Spostandolo dietro Authelia il bersaglio del
+brute force è uscito da sotto la jail esistente**, silenziosamente. È una
+conseguenza facile da non notare quando si sostituisce un meccanismo di auth.
+
+File aggiunti (bind mount da `~/apps/fail2ban/data-docker/`):
+
+- `filter.d/authelia-auth.conf` — `failregex` su `POST /api/(first|second)factor` con esito 401
+- `jail.d/authelia-auth.conf` — `maxretry = 15`, `findtime = 1h`, `bantime = 1h`
+
+`maxretry` è volutamente alto: a 5 fallimenti sullo stesso utente interviene già
+Authelia, e un ban all'edge è scomodo da subire per errore. Contro un attacco
+vero, che di tentativi ne fa migliaia, 15 o 5 è indifferente.
+
+**L'azione è `cloudflare-token`, non iptables.** Dietro Cloudflare i pacchetti
+arrivano dagli IP dell'edge, quindi bannare l'IP reale a livello di firewall
+locale non avrebbe alcun effetto: si banna via API sull'edge. Perché nel log
+compaia l'IP reale del client serve `forwardedHeaders.trustedIPs` con i range
+Cloudflare in `traefik.yml` — già configurato.
+
+**Il filtro è stato provato prima di attivarlo**, con `fail2ban-regex` contro
+l'access log reale: 24 righe agganciate su 5871, tutte tentativi di test, zero
+falsi positivi sul traffico normale.
+
+```bash
+docker exec fail2ban-docker fail2ban-regex \
+  /var/log/traefik/access.log /data/filter.d/authelia-auth.conf
+```
+
+**Trappola da ricordare:** al riavvio fail2ban rilegge il log dall'inizio della
+`findtime`. Attivando la jail subito dopo una sessione di test, i propri
+fallimenti vengono conteggiati e ci si autobanna. Lo sblocco è immediato:
+
+```bash
+docker exec fail2ban-docker fail2ban-client set authelia-auth unbanip <IP>
+docker exec fail2ban-docker fail2ban-client status authelia-auth
+```
+
+## 8. Rollback
 
 ```bash
 # 1. rimetti il basic-auth condiviso sul router di romamobile
@@ -161,7 +237,7 @@ cd ~/apps/authelia && docker compose down
 
 Nessun altro servizio è coinvolto in nessuno dei tre passi.
 
-## 8. Passo successivo, se servirà
+## 9. Passo successivo, se servirà
 
 Il basic-auth condiviso `protected@file` copre ancora tutti gli altri host, con
 gli stessi limiti di partenza: una credenziale sola, non revocabile per persona,
