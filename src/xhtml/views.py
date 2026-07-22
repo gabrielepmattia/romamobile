@@ -26,6 +26,9 @@ import re
 from hashlib import md5
 from random import randint
 import struct
+# Builtin su Python 2, spostato in functools su Python 3. `functools.reduce`
+# esiste gia' su Python 2.6, quindi questo import va bene su entrambi.
+from functools import reduce
 try:
 	import urllib2
 except ImportError:  # Python 3
@@ -35,7 +38,11 @@ try:
 	from urllib import unquote, quote
 except ImportError:  # Python 3
 	from urllib.parse import unquote, quote
-from Cookie import SimpleCookie, CookieError
+try:
+	from http.cookies import SimpleCookie, CookieError
+except ImportError:
+	# Python 2: il modulo si chiamava `Cookie`.
+	from Cookie import SimpleCookie, CookieError
 #from messaging import stdMsg, dbgMsg, errMsg, setDebugging
 import uuid
 from django.http import HttpResponse
@@ -55,14 +62,19 @@ COOKIE_NAME = "__utmmobile"
 COOKIE_PATH = "/"
 COOKIE_USER_PERSISTENCE = 63072000
 
-GIF_DATA = reduce(lambda x,y: x + struct.pack('B', y), 
+# Il seme dell'accumulatore e' b'' e non '': `struct.pack` restituisce `str` su
+# Python 2 ma `bytes` su Python 3, dove concatenarlo a una stringa di testo
+# sarebbe un TypeError. Su Python 2 `b''` e' esattamente `''`, quindi il
+# comportamento attuale non cambia. Il valore finisce in un HttpResponse, che
+# vuole byte: e' anche il tipo giusto.
+GIF_DATA = reduce(lambda x,y: x + struct.pack('B', y),
 				  [0x47,0x49,0x46,0x38,0x39,0x61,
 				   0x01,0x00,0x01,0x00,0x80,0x00,
 				   0x00,0x00,0x00,0x00,0xff,0xff,
 				   0xff,0x21,0xf9,0x04,0x01,0x00,
 				   0x00,0x00,0x00,0x2c,0x00,0x00,
 				   0x00,0x00,0x01,0x00,0x01,0x00, 
-				   0x00,0x02,0x01,0x44,0x00,0x3b], '')
+				   0x00,0x02,0x01,0x44,0x00,0x3b], b'')
 
 # WHITE GIF:
 # 47 49 46 38 39 61 

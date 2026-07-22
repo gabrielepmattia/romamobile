@@ -27,6 +27,7 @@ import time
 from xml.dom import minidom
 import errors
 import settings
+from servizi.py3compat import string_types
 from servizi.utils import oggetto_con_min, oggetto_con_max, aggiungi_banda, giorni_settimana
 from servizi.utils import ricapitalizza, FunctionInThread, PickledObjectField, transaction
 from datetime import datetime, timedelta
@@ -116,7 +117,7 @@ class Disabilitabile(models.Model):
 	disabilitazione = Disabilitazione
 		
 	def get_chiave_filter_dict(self):
-		if isinstance(self.chiave_disabilitazione, str) or isinstance(self.chiave_disabilitazione, unicode):
+		if isinstance(self.chiave_disabilitazione, string_types):
 			return {self.chiave_disabilitazione: getattr(self, self.chiave_disabilitazione)}
 		else:
 			return dict([(k[0], k[1](self)) for k in self.chiave_disabilitazione])
@@ -362,7 +363,7 @@ class Palina(VersionatoPaline, Disabilitabile):
 
 		caching è un parametro fittizio, presente nella segnatura per compatibilità con il passato
 		"""
-		if type(lineas) == str or type(lineas) == unicode:
+		if isinstance(lineas, string_types):
 			lineas = [lineas]			
 		ret = {}
 		ret['abilitata'] = self.abilitata_complessivo()

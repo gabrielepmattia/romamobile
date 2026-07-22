@@ -33,9 +33,13 @@ Quando il backend girera' solo su Python 3, questo modulo si svuota: ogni
 try:
 	# Python 2: il tipo testuale e' `unicode`, `str` sono byte.
 	text_type = unicode
+	# Per i controlli "e' una stringa?": su Python 2 vanno accettati entrambi,
+	# altrimenti un letterale non-unicode sfugge al test.
+	string_types = (str, unicode)
 except NameError:
 	# Python 3: `str` e' gia' testo.
 	text_type = str
+	string_types = (str,)
 
 
 def cmp(a, b):
