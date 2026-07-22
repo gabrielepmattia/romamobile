@@ -24,7 +24,6 @@ from . import tpl
 import pyximport; pyximport.install()
 from rpyc.utils.server import ThreadedServer
 import rpyc
-import pyproj
 from . import tratto
 from time import sleep
 from datetime import date, time, timedelta, datetime

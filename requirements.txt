@@ -16,7 +16,7 @@ Markdown
 protobuf==3.11.2
 psycopg2-binary==2.8.6
 ptyprocess==0.5.1
-pyproj==1.9.5.1
+pyproj==2.2.2  # ultima release che supporta ancora Python 2.7; porta PROJ 6
 pyshp==1.1.4
 pytz==2015.7
 redis==2.10.5
