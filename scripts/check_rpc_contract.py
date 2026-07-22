@@ -168,7 +168,28 @@ def esegui():
 		imp = impronta(ris)
 		out['chiamate'][chiave] = {'impronta': imp}
 		print("  %-52s ok" % metodo)
+
+	chiudi(merc)
 	return out
+
+
+def chiudi(merc):
+	"""
+	Chiude la connessione RPyC verso `giano`.
+
+	Senza, il processo **non esce**: RPyC 3.3 tiene thread di servizio non
+	demoni sulla connessione, e l'interprete resta ad aspettarli a tempo
+	indefinito. Il lavoro risulta fatto -- l'output e' completo, il file
+	scritto -- ma il comando non torna mai, e in uno script di deploy questo
+	significa una pipeline appesa invece di un errore.
+	"""
+	try:
+		if getattr(merc, 'connection', None) is not None:
+			merc.connection.close()
+	except Exception:
+		# La chiusura e' un dovere di pulizia, non un risultato da riportare:
+		# se fallisce c'e' comunque la rete di sicurezza in main().
+		pass
 
 
 def main():
@@ -270,4 +291,12 @@ def _differenze(a, b, prefisso):
 
 
 if __name__ == '__main__':
-	sys.exit(main())
+	rc = main()
+	# Rete di sicurezza per l'uscita: se `chiudi()` non e' bastato a liberare i
+	# thread di RPyC, `sys.exit` resterebbe ad aspettarli. Qui il lavoro e'
+	# finito e l'output e' gia' stampato, quindi terminare di netto e' corretto
+	# -- purche' lo stdout sia stato svuotato prima, altrimenti l'ultima riga
+	# si perde.
+	sys.stdout.flush()
+	sys.stderr.flush()
+	os._exit(rc)

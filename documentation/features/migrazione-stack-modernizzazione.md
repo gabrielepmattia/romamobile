@@ -122,18 +122,24 @@ progetto e va trattato come progetto indipendente dal backend.
 
 ### Come si eseguono
 
-```
-# smoke test: stato HTTP + contenuto, dal container web
-docker exec romamobile-web-1 python /app/../scripts/smoke_test.py
+Un comando solo, dalla radice del repo sull'host di deploy:
 
-# contratto RPC: impronta prima e dopo un cambiamento
-docker exec -w /app romamobile-web-1 python scripts/check_rpc_contract.py --dump /tmp/rpc-before.json
-#   ... si applica la modifica, si riavvia ...
-docker exec -w /app romamobile-web-1 python scripts/check_rpc_contract.py --compare /tmp/rpc-before.json
+```
+./scripts/run_tests.sh              # tutti i controlli, un solo exit code (~2m15s)
+./scripts/run_tests.sh smoke        # solo lo smoke test
+./scripts/run_tests.sh rpc-dump     # rifotografa il contratto RPC
+IMAGE=romamobile:test ./scripts/run_tests.sh   # prova un'immagine appena costruita
 ```
 
-`scripts/` non è dentro il bind mount di `src/`, quindi va copiato nel container
-(`docker cp`) oppure montato.
+C'è anche un `Makefile` (`make test`), ma è un involucro: **l'implementazione è
+nello script**, perché sull'host di produzione `make` non è installato e
+installarlo per lanciare tre `docker run` sarebbe sproporzionato.
+
+I controlli girano in container usa-e-getta sulla rete dello stack, montando
+`src/`, `scripts/` e i secrets — `scripts/` non è dentro il bind mount di `src/`,
+ed è il motivo per cui questo script esiste invece di tre comandi ricordati a
+memoria. Il riferimento del contratto RPC vive **sull'host** (`/tmp/romamobile-tests`
+di default): scritto dentro un container `--rm` sparirebbe con lui.
 
 ### Due lezioni finite dentro questi test
 
@@ -163,9 +169,20 @@ fossero struttura**.
 I **tipi** invece devono coincidere: è la proprietà che serve tenere. Stabilità
 confermata su tre esecuzioni consecutive contro dati vivi.
 
-**Exit criteria:** una `make test` (o equivalente) che gira in CI/Docker e passa sullo
-stack attuale (Py2/Django1.5). Manca ancora l'orchestrazione in un comando solo e
-una CI che la esegua.
+**Un difetto trovato provando l'attrezzatura, non usandola.** Il test sul
+contratto RPC faceva il suo lavoro e poi **non usciva**: RPyC 3.3 tiene thread di
+servizio non demoni sulla connessione, e l'interprete restava ad aspettarli. Le
+prime esecuzioni sembravano riuscite solo perché un `timeout` le uccideva *dopo*
+aver stampato l'esito. In uno script di deploy sarebbe stata una pipeline appesa
+invece di un errore — il modo peggiore di fallire. Ora la connessione viene
+chiusa esplicitamente, con un `os._exit` come rete di sicurezza: da indefinito a
+**1,8 secondi**.
+
+**Exit criteria:** ✅ per la parte eseguibile — `./scripts/run_tests.sh` gira in
+Docker contro lo stack attuale (Py2/Django 1.5), 2m15s, exit 0. Verificato anche
+il caso opposto: con un servizio irraggiungibile esce **1** e non dichiara
+successo. Resta da fare una **CI** che lo esegua da sola: oggi va lanciato a mano
+sull'host di deploy.
 
 ### Fase 1 — Fondamenta Python 3 (compatibilità Py2/3)
 
