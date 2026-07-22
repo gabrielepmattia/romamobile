@@ -60,9 +60,9 @@ progetto e va trattato come progetto indipendente dal backend.
 | `except X, e:` / `raise X, msg` | 48 punti | Banale | ✅ batch 2 |
 | `cPickle` / `Queue` / `xrange` / `iteritems` / `has_key` | 22 file | Meccanico | ✅ batch 2 |
 | `django.conf.urls.defaults` / `patterns()` (rimosso) | 32 file | Meccanico | Fase 2 |
-| `unicode()` / `basestring` / `cmp=` | ~40 punti | Medio (str/bytes) | da fare |
-| import relativi impliciti (`from models import *`) | diffusi | Medio | da fare |
-| `.pyx` Cython (grafo, geocoder) | 6 file | Ricompilazione + fix minori | da fare |
+| `unicode()` / `basestring` / `cmp=` | ~40 punti | Medio (str/bytes) | ✅ batch 4, coda in batch 10 |
+| import relativi impliciti (`from models import *`) | diffusi | Medio | ✅ batch 3 (`.py`) e 7 (`.pyx`) |
+| `.pyx` Cython (grafo, geocoder) | 6 file | Ricompilazione + fix minori | ✅ batch 7 (Cython 3 resta con Py3) |
 
 ### Dipendenze morte / da sostituire
 
@@ -563,6 +563,36 @@ test manuali) è a carico dell'ambiente di deploy dopo ogni batch.
     nomi non definiti su Py3 — `unicode` in `paline/models.py:119` e `:365`,
     sfuggiti al batch 4, e `reduce` in `xhtml/views.py:58`, che su Py3 vive in
     `functools`. Candidati per il prossimo batch.
+
+- **Fase 1 · batch 10 — gli ultimi `NameError` latenti.** I tre nomi che pyflakes
+  segnalava su Py3 sono in codice che gira, e sarebbero stati **500 a runtime**,
+  non errori di import: né `compileall` né `check_imports` li avrebbero mai visti.
+  - `paline/models.py` — due `unicode` in controlli "è una stringa?", sfuggiti al
+    batch 4. Ora passano da `string_types`, aggiunto a `servizi/py3compat.py`
+    accanto al `text_type` che c'era già.
+  - Uno dei due usava `type(x) == str` invece di `isinstance`: un proxy di
+    traduzione lazy (o qualunque sottoclasse di `str`) cadeva nel ramo "lista" e
+    veniva iterato **carattere per carattere**. Passare a `isinstance` è quindi
+    una correzione, non una riscrittura equivalente.
+  - `xhtml/views.py` — `reduce`, builtin su Py2 e in `functools` su Py3. La metà
+    difficile era il seme dell'accumulatore: `struct.pack` restituisce `str` su
+    Py2 ma `bytes` su Py3, quindi partire da `''` sarebbe stato un `TypeError`.
+    Ora parte da `b''`, che su Py2 è lo stesso oggetto ed è anche il tipo che
+    `HttpResponse` si aspetta.
+  - **Verifica del GIF:** i due interpreti costruiscono gli stessi 42 byte
+    (sha1 `d5fceb65…`, header `GIF89a`), e l'endpoint che li serve in produzione
+    (`/xhtml/ga`) restituisce **lo stesso sha1**: 200, `image/gif`, 42 byte.
+  - **Trovato per strada:** `from Cookie import …`, modulo stdlib rinominato in
+    `http.cookies`, sfuggito al batch 5. Convertito con lo stesso `try/except
+    ImportError`. Una battuta su tutti gli altri moduli rinominati (`ConfigParser`,
+    `HTMLParser`, `thread`, `copy_reg`, `__builtin__`, …) ha trovato solo
+    `cStringIO` in `servizi/unicode_csv.py`, **lasciato apposta**: quel modulo è
+    impalcatura CSV di Py2 da eliminare, non da portare, come già dice la sua
+    docstring.
+  - **Verifica:** `compileall` pulito su 2.7 e 3.11; `check_imports` 202 moduli,
+    0 falliti; **pyflakes non segnala più alcun nome non definito** in tutto il
+    backend. Nessuna modifica a `requirements.txt`, quindi nessun rebuild: solo
+    bind mount e restart.
 
 ### Validazione deploy 2026-07-22 (`hetzner-4gb-1`)
 
