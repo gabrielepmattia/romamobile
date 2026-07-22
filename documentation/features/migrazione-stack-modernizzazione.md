@@ -751,6 +751,48 @@ test manuali) è a carico dell'ambiente di deploy dopo ogni batch.
     oscurato), 0 falliti; `giano` `RestartCount=0` su 60 s; smoke test tutto 200.
     Nessuna modifica a `requirements.txt`, quindi nessun rebuild.
 
+- **Bugfix — il tronco comune Metro B/B1 non è mai stato costruito.** I `KeyError`
+  in `costruisci_percorso_intersezione` che comparivano nei log di `giano` a ogni
+  avvio erano `PERCORSI_INTERSEZIONE`, che fissava a mano quattro id di percorso
+  GTFS: nessuno dei quattro esiste più (oggi sono `RM597`/`RM625` e
+  `RM598`/`RM321`). Quelle righe non erano mai state toccate dall'*Initial
+  reimport*, quindi la funzione è rimasta spenta per tutta la storia visibile —
+  stessa forma di `paline/gtfs.py`, codice che non è mai partito.
+  - **Cosa costava.** La funzione fonde le frequenze delle due linee come
+    `1/(1/f1 + 1/f2)`: sul tronco Laurentina–Bologna vale il primo treno che
+    passa, quindi l'attesa è quella delle due frequenze sommate. Senza, ognuna
+    delle **15 fermate condivise** veniva modellata sulla frequenza di una linea
+    sola, e il calcolo percorso sovrastimava l'attesa. Non un errore visibile: un
+    risultato peggiore che nessuno poteva notare.
+  - **Perché sulla metro pesa più che altrove:** il feed realtime **non contiene
+    veicoli della metro** — 289 `route_id`, tutti di superficie. Verificato anche
+    lato applicazione: `route_stats` dà `veicoli=0` su tutti e quattro i percorsi
+    di B e B1, contro `veicoli=2` sulla linea 64. Gli alert invece la coprono
+    (`MEA` compare nel feed). Quindi per la metro la frequenza è **l'unico**
+    segnale disponibile, e sbagliarla è tutto ciò che c'è da sbagliare.
+  - **Gli id ora si ricavano dalla rete** (`Rete.coppie_tronco_comune`): due
+    percorsi che *partono* dalla stessa palina vanno nella stessa direzione, e
+    così due che vi *arrivano*. Tanto basta ad appaiare `MEB` con `MEB1` senza
+    nominare nulla che il feed generi. È la terza volta in un giorno che id GTFS
+    scritti a mano si rivelano scaduti, e `6ce20d5` ne aveva già corretta una
+    passando agli id interni stabili: qui si fa un passo oltre. Se
+    l'appaiamento non trova nulla, ora lo dice — prima falliva dentro un
+    `try/except`.
+  - **Corretto anche un difetto latente** nella funzione riaccesa: il capolinea
+    veniva preso dall'ultima palina di `p1` invece che dall'ultima **condivisa**.
+    Per la B1 sarebbe stato Jonio, che sul tronco comune non è nemmeno una
+    fermata. Mai eseguito, mai notato.
+  - **Verifica:** allo start di `giano` compaiono `Tronco comune MEBCom1:
+    RM597 + RM625 -> MEBCom11` e `RM598 + RM321 -> MEBCom12`, **zero `KeyError`**;
+    `MEBCom11` ha 15 fermate; un percorso Piramide → Bologna ora è pianificato su
+    *"Metro B - B1"* (21 minuti). `./scripts/run_tests.sh` verde, contratto RPC
+    invariato.
+  - **Aperto:** `route_stats` dà `partenze/h=0` sul percorso sintetico, perché
+    quelle statistiche vengono dai dati osservati e nel feed `MEBCom1` non
+    esiste. Non tocca il pianificatore (che usa le frequenze), ma se un giorno si
+    volessero mostrare le attese sulle pagine delle paline metro, quel numero va
+    preso dal modello di frequenza e non da `stat_percorsi`.
+
 ### Validazione deploy 2026-07-22 (`hetzner-4gb-1`)
 
 - **Batch 7 e 8 erano arrivati sul server senza rebuild, e `giano` era giù.**
