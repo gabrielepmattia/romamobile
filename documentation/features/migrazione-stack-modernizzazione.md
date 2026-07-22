@@ -97,21 +97,75 @@ progetto e va trattato come progetto indipendente dal backend.
 
 **Perché:** non esiste (ancora) una suite di test; migrare senza verifica è cieco.
 
-- [ ] Inventario degli endpoint/servizi critici da non rompere: `/metro`, ricerca
-      linee, dettaglio palina, cerca percorso, arrivi in tempo reale, news.
-- [ ] Smoke test end-to-end (anche solo HTTP status + presenza contenuti chiave) sui
-      percorsi critici, eseguibili in Docker.
-- [ ] Test di caratterizzazione sul contratto RPC `web` ↔ `giano` (input/output dei
-      metodi `exposed_*` più usati: `route_stats`, `tempi_attesa`, `cerca_percorso`).
-- [ ] Fissare i dati/fixtures minimi per far girare i test in modo riproducibile.
+- [x] Inventario degli endpoint critici: non è un elenco a parte, sta in
+      `scripts/smoke_test.py`. Un inventario che non viene eseguito invecchia
+      senza che nessuno se ne accorga; quello lì dentro fallisce se sbaglia.
+- [x] Smoke test end-to-end: `scripts/smoke_test.py`, 14 controlli, eseguibile in
+      Docker. Verifica stato **e** contenuto — vedi sotto perché le due cose non
+      coincidono.
+- [x] Test di caratterizzazione sul contratto RPC `web` ↔ `giano`:
+      `scripts/check_rpc_contract.py`.
+- [ ] Fissare i dati/fixtures minimi. **Deliberatamente non fatto, per ora**: i
+      due test sopra sono costruiti per non dipendere dai *valori*, quindi girano
+      contro lo stack reale senza bisogno di un DB precaricato. Resta però una
+      dipendenza da tre identificativi (palina `73992`, percorso `RM173`, linea
+      `64`) che un domani il feed GTFS potrebbe non contenere più. Il rischio è
+      contenuto perché entrambi gli script **falliscono in modo rumoroso** se
+      quegli id smettono di restituire dati: un'impronta vuota non coincide con
+      il riferimento, e una pagina sotto i 500 byte è già un errore. Le fixture
+      vere servono quando ci sarà una CI senza rete verso il feed.
 - [x] `scripts/check_imports.py`: importa ogni modulo del backend (un fork per
       modulo) con i settings Django caricati. Intercetta gli import rotti, che
       `compileall` non vede.
 - [x] `scripts/check_sort_equivalence.py`: test di caratterizzazione sull'ordinamento
       degli arrivi, usato per validare il passaggio da `cmp=` a `key=`.
 
+### Come si eseguono
+
+```
+# smoke test: stato HTTP + contenuto, dal container web
+docker exec romamobile-web-1 python /app/../scripts/smoke_test.py
+
+# contratto RPC: impronta prima e dopo un cambiamento
+docker exec -w /app romamobile-web-1 python scripts/check_rpc_contract.py --dump /tmp/rpc-before.json
+#   ... si applica la modifica, si riavvia ...
+docker exec -w /app romamobile-web-1 python scripts/check_rpc_contract.py --compare /tmp/rpc-before.json
+```
+
+`scripts/` non è dentro il bind mount di `src/`, quindi va copiato nel container
+(`docker cp`) oppure montato.
+
+### Due lezioni finite dentro questi test
+
+**Stato HTTP e funzionamento non sono la stessa cosa.** Il 22 luglio `giano` è
+rimasto giù per 441 restart mentre `web` rispondeva **200 su ogni pagina**: erano
+pagine vuote di dati. Perciò i casi dello smoke test portano due tipi di
+marcatore — quelli che devono esserci sempre, e quelli che compaiono **solo** se
+la catena `web` → RPyC → `giano` è viva. Se mancano i secondi il verdetto non è
+"passato" ma `CIECO`, con uscita diversa da zero e il comando per controllare
+`giano`. Il ramo è stato verificato forzandolo: un rilevatore di guasti mai visto
+scattare non è una garanzia.
+
+**Il contratto RPC si caratterizza sulla forma, non sui valori.** I dati sono in
+tempo reale e cambiano a ogni chiamata. Ciò che deve restare stabile è quali
+chiavi tornano e di che tipo è ciascun valore — che è anche esattamente il
+rischio del salto a Python 3, dove il payload è pickle e un `unicode` che diventa
+`bytes` non fa rumore. Rendere quell'impronta stabile ha richiesto tre tentativi,
+e ogni fallimento era lo stesso errore travestito: **trattare dati come se
+fossero struttura**.
+
+| Sintomo | Causa | Rimedio |
+|---|---|---|
+| `arrivi` cambiava a ogni giro | le sue chiavi sono id di palina, cioè dati | dichiarato come mappa: le chiavi si collassano |
+| ogni veicolo dava un'impronta diversa | l'insieme delle varianti dipende da quanti veicoli sono in strada | gli elementi di una lista si **fondono** in un'impronta sola |
+| `stato_occupazione`: `None\|int` → `int` | in quel campione nessun veicolo aveva il valore nullo | il confronto ignora `None`: un campione sempre-assente non dice nulla sul tipo |
+
+I **tipi** invece devono coincidere: è la proprietà che serve tenere. Stabilità
+confermata su tre esecuzioni consecutive contro dati vivi.
+
 **Exit criteria:** una `make test` (o equivalente) che gira in CI/Docker e passa sullo
-stack attuale (Py2/Django1.5).
+stack attuale (Py2/Django1.5). Manca ancora l'orchestrazione in un comando solo e
+una CI che la esegua.
 
 ### Fase 1 — Fondamenta Python 3 (compatibilità Py2/3)
 
