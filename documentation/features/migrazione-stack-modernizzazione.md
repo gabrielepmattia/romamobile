@@ -118,7 +118,9 @@ stack attuale (Py2/Django1.5).
 **Strategia:** rendere il codice eseguibile su **entrambi** Py2 e Py3 (via `six`/
 `future`), così da poter migrare a piccoli passi restando sempre rilasciabili su Py2.
 
-- [ ] Sostituire le dipendenze morte con equivalenti Py3-compatibili (tabella sopra).
+- [x] Sostituire le dipendenze morte con equivalenti Py3-compatibili (tabella
+      sopra). Fatte tutte quelle muovibili una alla volta; resta `rpyc`, che non
+      è incrementale.
 - [ ] Automatizzare le trasformazioni meccaniche (`futurize`/`2to3` mirati):
   - [x] `print` statement → `print()` funzione + `from __future__ import print_function`
         (40 file backend; frontend `percorso/js/` escluso, è Fase 3).
@@ -635,6 +637,48 @@ test manuali) è a carico dell'ambiente di deploy dopo ogni batch.
     rete caricata). Sono in `atacmobile.log` fin dalla riga 2 di un file da
     4,8 MB, quando quel codice stava a `tpl.py:2001`: vengono da lontano e
     meritano un'analisi a parte.
+
+- **Fase 1 · batch 12 — `unicode_csv` e un modulo mai eseguito.**
+  - **`paline/gtfs.py` non è mai stato raggiungibile.** Accanto c'è un *package*
+    omonimo, `paline/gtfs/`, e in Python il package vince sul modulo: `import
+    paline.gtfs` ha sempre risolto a `paline/gtfs/__init__.py`. Verificato in
+    container (`paline.gtfs.__file__` → `paline/gtfs/__init__.pyc`,
+    `hasattr(g, 'generate_gtfs')` → `False`). Entrambi nascono nell'*Initial
+    reimport*, quindi la cosa precede la storia visibile: **l'export GTFS
+    statico è spento da sempre**, e `generate_gtfs` non ha alcun chiamante.
+    Rimosso; con lui se ne vanno 7 dei 9 usi di `unicode_csv`.
+  - **`servizi/unicode_csv.py` era l'ultimo modulo a importare un nome stdlib
+    solo-Py2** (`cStringIO`). La roadmap dice di eliminarlo, non di portarlo — e
+    resta giusto, ma solo *quando* il backend sarà su Py3: finché in produzione
+    gira Py2, i chiamanti hanno ancora bisogno di quella impalcatura.
+  - Ora contiene due implementazioni dietro un controllo di versione: su Py2 il
+    comportamento storico, su Py3 una delega diretta a `csv`, che lavora in testo
+    da sempre. Un `csv_open()` mette l'encoding dove ciascuna versione lo vuole:
+    binario su 2, `io.open(encoding=…, newline='')` su 3 — quel `newline=''` è
+    richiesto dalla documentazione di `csv`, senza si corrompono i campi quotati
+    che contengono a capo.
+  - **Verificato invece che sperato**, con `scripts/check_csv_equivalence.py`
+    (accenti, delimitatore dentro il campo, virgolette da raddoppiare, a capo
+    incorporato, campi vuoti, due encoding):
+
+    | | byte | sha1 | intestazione |
+    |---|---|---|---|
+    | Py2, modulo storico | 204 | `78ba629f…` | `note;n;nome` |
+    | Py2, modulo riscritto | 204 | `78ba629f…` | `note;n;nome` |
+    | Py3, modulo riscritto | 204 | `31f9d609…` | `nome;note;n` |
+
+    Su Py2 **byte-identico**, incluso lo stesso `UnicodeEncodeError` sul simbolo
+    € in latin-1. Il giro attraverso `cStringIO` con encoder incrementale che è
+    stato eliminato era un viaggio a vuoto: codificava in utf-8, decodificava,
+    ricodificava.
+  - **Differenza non risolvibile qui, documentata nel modulo:**
+    `UnicodeLazyDictWriter` prende l'ordine delle colonne da `list(row)`, che è
+    ordine di *hash* su Py2 e di *inserimento* su Py3.7+. Stesso contenuto,
+    stessa lunghezza, **colonne in ordine diverso**. Chi legge quei file per nome
+    non se ne accorge; chi legge per posizione si romperebbe al passaggio.
+  - **Verifica:** `check_imports` **199 moduli** (uno in meno, il modulo
+    oscurato), 0 falliti; `giano` `RestartCount=0` su 60 s; smoke test tutto 200.
+    Nessuna modifica a `requirements.txt`, quindi nessun rebuild.
 
 ### Validazione deploy 2026-07-22 (`hetzner-4gb-1`)
 
