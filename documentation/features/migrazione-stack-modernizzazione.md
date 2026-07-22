@@ -522,6 +522,61 @@ test manuali) è a carico dell'ambiente di deploy dopo ogni batch.
   smoke test tutto 200 e linee di nuovo attive (`🚍 3 🕒 5` sulla 64). Vecchia
   immagine conservata come `romamobile:rollback`.
 
+### Validazione deploy 2026-07-22 (`hetzner-4gb-1`)
+
+- **Batch 7 e 8 erano arrivati sul server senza rebuild, e `giano` era giù.**
+  Il codice è bind-mounted (`./src:/app`), quindi un `git pull` lo porta in
+  servizio **subito**; `requirements.txt` invece vive nell'immagine. Il batch 8
+  ha introdotto `import polyline` in `paline/gmaps.py`, che nell'immagine non
+  c'era: `runtrovalinea_new` moriva all'avvio con `ImportError: No module named
+  polyline`, e il `restart: always` lo faceva ripartire all'infinito.
+  **`RestartCount` era a 441.** Il daemon di routing era fermo: niente arrivi in
+  tempo reale, niente calcolo percorso. `web` restava su e serviva le pagine, ed
+  è il motivo per cui il guasto non si vedeva da un check HTTP sulla home.
+
+  - **La lezione, da mettere nel runbook:** *un batch che tocca
+    `requirements.txt` non è deployato finché l'immagine non è ricostruita.* Il
+    batch 6 lo aveva già scritto, ma come procedura da seguire, non come
+    condizione da verificare. Il controllo che l'avrebbe intercettato in un
+    secondo è `docker ps`: `Restarting (1)` invece di `Up`.
+  - **Sintomo utile:** `RestartCount` alto su `giano` con `web` sano. Un
+    monitoraggio che guardi solo gli endpoint HTTP pubblici non lo vede, perché
+    le pagine continuano a rispondere 200 — solo più povere.
+
+- **Rimessa in servizio** seguendo la procedura del batch 6: `docker build -t
+  romamobile:test .` → `check_imports` **contro l'immagine nuova** (202 moduli,
+  **0 falliti**) → `docker tag romamobile:latest romamobile:rollback-20260722` →
+  promozione a `latest` → `docker compose -f docker-compose.yml -f
+  ../../docker-compose.yml up -d --force-recreate giano web`.
+
+  - **Attenzione al comando compose:** lo stack si avvia con **due file
+    sovrapposti** (`repo/romamobile/docker-compose.yml` più l'override in
+    `~/apps/_romamobile/`) e `working_dir` sul primo. Lanciare `docker compose
+    up` dalla directory dell'override usa solo quello, e i path relativi
+    (`./src`, `./secrets`) non risolvono: fallisce con `bind source path does
+    not exist`. Il comando giusto è quello sopra, dal repo.
+
+- **Smoke test dopo il rebuild**, tutti 200:
+
+  | Endpoint | Dopo batch 8 | | Endpoint | Dopo batch 8 |
+  |---|---|---|---|---|
+  | `/` | 11029 b | | `/paline/elenco_linee` | 215721 b |
+  | `/metro/` | 7069 b | | `/news/` | 5745 b |
+  | `/paline/linea/64` | 7168 b | | `/percorso/` | 8382 b |
+  | `/paline/linea/MEA` | 7146 b | | `/meteo/` | 5982 b |
+  | `/paline/palina/73992` (RPC → `giano`) | 10408 b | | `/paline/percorso/RM173` | 13759 b |
+
+  Le risposte sono più grandi della baseline del batch 2 (palina 5370 → 10408 b,
+  linea 64 4659 → 7168 b): le linee sono attive e mostrano previsioni, quindi la
+  catena `web` → RPyC → `giano` è integra. `/metro/` rende "Metro A / Metro B /
+  Metro B1 / Metro C". `/metro` senza slash risponde 301 (`APPEND_SLASH` di
+  Django), non è una regressione.
+
+- **Nota non legata alla migrazione:** da oggi `rm.gpm.name` non è più dietro il
+  basic-auth condiviso di Traefik ma dietro un portale Authelia dedicato, per
+  poter dare accesso al sito a una persona senza darle anche gli altri servizi
+  dell'host. Vedi [Accesso e autenticazione](accesso-e-autenticazione.md).
+
 **Nota operativa (da tenere nel runbook di deploy):** quando un batch tocca un
 `.pyx`, `pyximport` invalida la cache in `~/.pyxbld` e **ricompila a runtime** al
 riavvio di `giano`. Per ~30 s dopo il restart tutti gli endpoint che passano dall'RPC
