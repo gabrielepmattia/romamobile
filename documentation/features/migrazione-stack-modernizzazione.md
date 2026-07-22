@@ -72,8 +72,8 @@ progetto e va trattato come progetto indipendente dal backend.
 | `pycrypto==2.6.1` (morto, CVE noti) | nessuno: non era importato | ✅ batch 6 (via rimozione di `paramiko`) |
 | `pycha`, `pycurl`, `PyYAML` | nessuno: non importati | ✅ batch 6 |
 | `cGPolyEncode==0.1.1` (nessuna release Py3) | `polyline` | ✅ batch 8 |
-| `Cython==0.23.4` | Cython moderno |
-| `pyproj==1.9.5.1` | `pyproj` 3.x (API cambiata) |
+| `Cython==0.23.4` | Cython moderno | ✅ batch 7 |
+| `pyproj==1.9.5.1` | `pyproj` 2.2.2 (ultima con Py2) | ✅ batch 9 |
 | `rpyc==3.3.0` | RPyC attuale |
 | `django-json-rpc`, `django-constance`, `gtfs-realtime-bindings==0.0.6` | versioni correnti |
 | `Django==1.5.12` | Django LTS | Fase 2 |
@@ -82,7 +82,7 @@ progetto e va trattato come progetto indipendente dal backend.
 
 | Pacchetto | Nota |
 |---|---|
-| `pyproj==1.9.5.1` | `2.2.2` è l'ultima con Python 2. L'API cambia (`Proj`, `transform`): tocca `geomath`, quindi **tutte** le conversioni Gauss-Boaga ↔ WGS84. Da fare con un test di caratterizzazione sulle coordinate, non a occhio. |
+| ~~`pyproj==1.9.5.1`~~ | ✅ batch 9. Il timore sull'API era mal riposto: cambia `pyproj.transform()`, che `geomath` non chiama mai. Il rischio vero era sotto, PROJ 4 → PROJ 6; misurato nullo. |
 | `rpyc==3.3.0` | La 4.x supporta Py3 ma cambia il protocollo: `web` e `giano` vanno aggiornati **insieme**, non uno alla volta. Unico punto della migrazione che non è incrementale. |
 | `gtfs-realtime-bindings==0.0.6` | Legata alla versione di `protobuf`; da muovere insieme a quella. |
 | `django-json-rpc`, `django-constance`, `django-simple-captcha`, `django-redis` | Versioni vincolate a Django: si muovono in Fase 2. Nota: `django-simple-captcha 0.5.1` dichiara già `Django>=1.7`, e pip lo segnala a ogni build. |
@@ -138,6 +138,9 @@ stack attuale (Py2/Django1.5).
       fissato esplicitamente in ogni `.pyx`. Il salto a **Cython 3** resta da fare
       insieme a Python 3: i warning già segnalano `cpdef variables` e un
       `cdef variable 'time' declared after it is used` in `grafo.pyx`.
+- [x] `pyproj` 1.9.5.1 → 2.2.2 (ultima serie con target Py2), validato con
+      `scripts/check_proj_equivalence.py`. Restano `rpyc` e
+      `gtfs-realtime-bindings`/`protobuf`.
 - [ ] Aggiornare `requirements.txt` e il `Dockerfile` (immagine base Py3).
 
 **Exit criteria:** l'intero stack parte e passa i test di Fase 0 **su Python 3**,
@@ -522,6 +525,45 @@ test manuali) è a carico dell'ambiente di deploy dopo ogni batch.
   smoke test tutto 200 e linee di nuovo attive (`🚍 3 🕒 5` sulla 64). Vecchia
   immagine conservata come `romamobile:rollback`.
 
+- **Fase 1 · batch 9 — `pyproj` 1.9.5.1 → 2.2.2.** Ultima serie che supporta
+  ancora Python 2.7: si aggiorna la libreria prima dell'interprete, come già
+  fatto con Cython nel batch 7.
+  - **Il timore registrato in questa roadmap era mal riposto.** Quello che cambia
+    in pyproj 2.x è `pyproj.transform()`, e `geomath` non lo chiama mai: usa il
+    `Proj` *chiamabile* (`gbfe(x, y)` e `inverse=True`), che nelle due versioni
+    si scrive identico. Nessuna riga di conversione è stata toccata.
+  - **Il rischio vero era sotto il Python:** la libreria C passa da **PROJ 4 a
+    PROJ 6**. Un datum trattato diversamente avrebbe spostato *tutte* le
+    conversioni Gauss-Boaga ↔ WGS84 senza che cambiasse una riga di codice — il
+    tipo di regressione che non si vede finché qualcuno non nota le paline fuori
+    posto.
+  - `scripts/check_proj_equivalence.py` lo misura invece di supporlo: griglia di
+    441 punti su Roma, entrambe le direzioni più l'andata e ritorno.
+
+    | | scarto massimo |
+    |---|---|
+    | WGS84 → GBFE | 0,0000023 m (2,3 µm) |
+    | GBFE → WGS84 | 0,0000000000037° (~0,004 mm) |
+    | andata e ritorno | 0 |
+
+    È rumore di virgola mobile. La tolleranza è fissata a **1 mm**, tre ordini di
+    grandezza sotto ciò che questo codice può rappresentare: le coordinate delle
+    paline hanno precisione metrica e in `geomath.py` convive una correzione
+    fissa `corr_gbfe = (-16, 78)`, cioè decine di metri applicati a mano. Una
+    differenza di *modello geodetico* si manifesterebbe con decine di metri e
+    supererebbe quella soglia con enorme margine.
+  - **Conferma end-to-end:** il test di caratterizzazione sul routing del batch 7
+    (stesso input, Colosseo → Termini) restituisce **13311 byte, identici byte
+    per byte** al valore di allora. Un cambio di proiezione si sarebbe visto lì.
+  - Rimosso l'`import pyproj` morto in `trovalinea.py` (zero usi di `pyproj.`).
+    **Lasciati stare** i `gbfo` in `geomath.py` e `infopoint.py`: sono `Proj`
+    costruiti ma mai usati, servono solo a codice commentato. Vanno tolti, ma in
+    un batch di pulizia, non in uno di aggiornamento dipendenze.
+  - **Trovato per strada** (pyflakes, non introdotto da questo batch): restano 3
+    nomi non definiti su Py3 — `unicode` in `paline/models.py:119` e `:365`,
+    sfuggiti al batch 4, e `reduce` in `xhtml/views.py:58`, che su Py3 vive in
+    `functools`. Candidati per il prossimo batch.
+
 ### Validazione deploy 2026-07-22 (`hetzner-4gb-1`)
 
 - **Batch 7 e 8 erano arrivati sul server senza rebuild, e `giano` era giù.**
@@ -571,6 +613,16 @@ test manuali) è a carico dell'ambiente di deploy dopo ogni batch.
   catena `web` → RPyC → `giano` è integra. `/metro/` rende "Metro A / Metro B /
   Metro B1 / Metro C". `/metro` senza slash risponde 301 (`APPEND_SLASH` di
   Django), non è una regressione.
+
+- **Batch 9** (`a5dc7ae`): secondo deploy con immagine ricostruita della giornata.
+  `check_imports` contro la nuova immagine: **202 moduli, 0 falliti**;
+  `check_proj_equivalence` contro l'immagine reale: **EQUIVALENTI**. In servizio
+  `pyproj 2.2.2` con `PROJ 6.1.1`. `giano` risalito con `RestartCount=0` stabile
+  su 60 s di osservazione. Smoke test tutto 200, con le dimensioni invariate
+  tranne le tre pagine che mostrano partenze in tempo reale (`/metro/`,
+  `/paline/percorso/RM173`, `/paline/palina/73992`), che variano di minuto in
+  minuto per natura. Immagine precedente conservata come
+  `romamobile:rollback-pyproj-20260722`.
 
 - **Nota non legata alla migrazione:** da oggi `rm.gpm.name` non è più dietro il
   basic-auth condiviso di Traefik ma dietro un portale Authelia dedicato, per
