@@ -67,9 +67,18 @@ import os, os.path
 import json
 
 
-PERCORSI_INTERSEZIONE = [
-	('56082', '50819', 'MEBCom11', 'MEBCom1', 'ME', 'Metro B - B1'), # B1, B Direz. Bologna
-	('56083', '50820', 'MEBCom12', 'MEBCom1', 'ME', 'Metro B - B1'), # B1, B Direz. Laurentina
+# Linee che condividono un tronco. Sul tratto comune conviene modellarle come un
+# percorso solo: all'utente va bene il primo mezzo che passa, quindi l'attesa e'
+# quella delle due frequenze sommate, non di una sola.
+#
+# Si nominano le **linee**, non i percorsi. Gli id dei percorsi vengono dal feed
+# GTFS e cambiano quando il feed viene rigenerato: la versione precedente li
+# fissava a mano ('56082', '50819', ...) e quei quattro id non esistono piu' da
+# tempo, quindi il tronco comune non veniva costruito affatto. Le coppie ora si
+# ricavano dalla rete, appaiando i percorsi per capolinea condiviso.
+TRONCHI_COMUNI = [
+	# (linea 1, linea 2, prefisso id percorso, id linea, tipo, descrizione)
+	('MEB1', 'MEB', 'MEBCom1', 'MEBCom1', 'ME', 'Metro B - B1'),
 ]
 FATTORE_AVANZAMENTO_TEMPO = 0.8
 N_ISTANZE_PARALLELE = 3
@@ -220,9 +229,22 @@ def TrovalineaFactory(
 			if dt is not None:
 				v = mysql2datetime(dt)
 			r.carica(retina, versione=v)
-			for el in PERCORSI_INTERSEZIONE:
-				p1, p2, idp, idl, tipo, desc = el
-				r.costruisci_percorso_intersezione(p1, p2, idp, idl, tipo, desc)
+			for id_linea_1, id_linea_2, prefisso, id_linea, tipo, desc in TRONCHI_COMUNI:
+				coppie = r.coppie_tronco_comune(id_linea_1, id_linea_2)
+				if not coppie:
+					# Rumoroso di proposito: la versione con gli id fissati a
+					# mano falliva dentro un try/except e il tronco restava
+					# spento senza che nessuno se ne accorgesse.
+					m = ("Tronco comune %s/%s non costruito: nessuna coppia di "
+					     "percorsi con capolinea condiviso. Le due linee esistono "
+					     "ancora nella rete?" % (id_linea_1, id_linea_2))
+					logging.error(m)
+					print(m)
+				for id_p1, id_p2, suffisso in coppie:
+					print("Tronco comune %s: %s + %s -> %s" % (
+						id_linea, id_p1, id_p2, prefisso + suffisso))
+					r.costruisci_percorso_intersezione(
+						id_p1, id_p2, prefisso + suffisso, id_linea, tipo, desc)
 			if shell:
 				ShellThread(cls).start()
 			if calcola_percorso:

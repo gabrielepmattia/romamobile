@@ -2010,6 +2010,58 @@ class Rete(object):
 
 		print(("Filtrati: ", filtrati))
 
+	def coppie_tronco_comune(self, id_linea_1, id_linea_2):
+		"""
+		Percorsi delle due linee che corrono sullo stesso tronco, appaiati per verso.
+
+		Restituisce `[(id_percorso_1, id_percorso_2, suffisso), ...]`, dove il
+		suffisso distingue le due direzioni.
+
+		**Il verso si riconosce dal capolinea condiviso**, non da id fissati a
+		mano: due percorsi che *partono* dalla stessa palina vanno nella stessa
+		direzione, e cosi' due che vi *arrivano*. Gli id dei percorsi vengono dal
+		feed GTFS e cambiano quando il feed viene rigenerato -- e' gia' successo,
+		lasciando spento per anni il tronco comune Metro B/B1 senza che nulla lo
+		segnalasse -- mentre i capolinea restano quelli.
+		"""
+		def per_linea(id_linea):
+			# Ordinati per avere lo stesso esito a ogni avvio: `percorsi` e' un
+			# dict, e su Python 2 il suo ordine dipende dagli hash.
+			return sorted(
+				[p for p in self.percorsi.values() if p.id_linea == id_linea],
+				key=lambda p: p.id_percorso)
+
+		uno = per_linea(id_linea_1)
+		due = per_linea(id_linea_2)
+		coppie = []
+		usati = set()
+
+		# estremo 0 = stessa partenza, -1 = stesso arrivo: sono le due direzioni.
+		for suffisso, estremo in (('1', 0), ('2', -1)):
+			trovata = None
+			for a in uno:
+				if a.id_percorso in usati:
+					continue
+				pa = a.get_paline()
+				if not pa:
+					continue
+				for b in due:
+					if b.id_percorso in usati:
+						continue
+					pb = b.get_paline()
+					if not pb:
+						continue
+					if pa[estremo].id_palina == pb[estremo].id_palina:
+						trovata = (a.id_percorso, b.id_percorso, suffisso)
+						break
+				if trovata is not None:
+					break
+			if trovata is not None:
+				coppie.append(trovata)
+				usati.add(trovata[0])
+				usati.add(trovata[1])
+		return coppie
+
 	def costruisci_percorso_intersezione(self, id_percorso_1, id_percorso_2, id_percorso, id_linea, tipo, descrizione):
 		try:
 			p1 = self.percorsi[id_percorso_1]
@@ -2021,6 +2073,7 @@ class Rete(object):
 			p = self.add_percorso(id_percorso, id_linea, tipo, descrizione, False, p1.gestore)
 			n = 0
 			old_f = None
+			ultima_comune = None
 			for pa in pal1:
 				if pa in paline:
 					n += 1
@@ -2029,7 +2082,17 @@ class Rete(object):
 					if old_f is not None:
 						self.add_tratto_percorso(id_percorso, old_f, f)
 					old_f = f
-			self.add_capolinea(id_percorso, pa.id_palina)
+					ultima_comune = pa
+			if ultima_comune is None:
+				raise ValueError(
+					"nessuna palina in comune fra %s e %s: tronco %s non costruibile"
+					% (id_percorso_1, id_percorso_2, id_percorso))
+			# L'ultima palina *condivisa*, non l'ultima di p1: il tronco finisce
+			# dove le due linee si separano. Prima si usava `pa`, cioe' il
+			# capolinea di p1 -- per la B1 sarebbe Jonio, che sul tronco comune
+			# non e' nemmeno una fermata. Il codice non era mai stato eseguito,
+			# quindi non se n'era accorto nessuno.
+			self.add_capolinea(id_percorso, ultima_comune.id_palina)
 			# Frequenze
 			for giorno_settimana in range(0, 7):
 				for ora_inizio in range(0, 24):
