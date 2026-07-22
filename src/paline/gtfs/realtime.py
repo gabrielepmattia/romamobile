@@ -28,6 +28,32 @@ def get_gtfs_rt_last_update():
 	return r.headers.get('Last-Modified') or datetime.now().isoformat()
 
 
+# OccupancyStatus.NO_DATA_AVAILABLE, aggiunto allo standard GTFS-realtime dopo
+# le bindings 0.0.6. Quelle non lo conoscevano e lo scartavano come enum
+# sconosciuto, quindi il campo risultava assente; dalla 0.0.7 arriva valorizzato.
+NO_DATA_AVAILABLE = 7
+
+
+def _occupancy(v):
+	"""
+	Stato di occupazione del veicolo, o None se il dato non c'e'.
+
+	Il 7 significa letteralmente "nessun dato", che qui si e' sempre
+	rappresentato con None: tradurlo mantiene una sola forma per un solo
+	concetto. Senza questa riga, l'aggiornamento delle bindings farebbe
+	comparire l'icona "molto affollato" su ogni veicolo privo del dato --
+	`decode_occupation_status` manda nel secchio "affollato" tutto cio' che
+	e' >= 4.
+
+	Nota (preesistente, non introdotta qui): il test e' sulla verita' del
+	valore, quindi anche EMPTY (0) diventa None. Oggi non si vede perche' il
+	feed di Roma non manda mai 0, ma resta una perdita di informazione.
+	"""
+	if not v.occupancy_status or v.occupancy_status == NO_DATA_AVAILABLE:
+		return None
+	return int(v.occupancy_status)
+
+
 def read_vehicles(predicate=None):
 	"""
 	Read vehicle data from protocolbuffer, and decode to Python dict
@@ -62,7 +88,7 @@ def read_vehicles(predicate=None):
 					'progressiva': v.current_stop_sequence,
 					'stop_id': v.stop_id,
 					'timestamp': datetime.fromtimestamp(v.timestamp),
-					'occupancy_status': int(v.occupancy_status) if v.occupancy_status else None,
+					'occupancy_status': _occupancy(v),
 				}
 
 

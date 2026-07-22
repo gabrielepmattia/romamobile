@@ -69,7 +69,6 @@ from collections import defaultdict
 from pprint import pprint
 from random import Random
 from .gtfs import realtime, parse_static, alerts #, map_id_veicolo
-# import gtfs_rt
 
 
 LINEE_MINI = ['90', '542', '61', 'MEB', 'MEB1', '998', 'MEA', 'FR1']

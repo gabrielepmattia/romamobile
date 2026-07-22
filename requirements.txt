@@ -8,12 +8,12 @@ django-json-rpc==0.7.2
 django-picklefield==0.3.2
 django-redis==4.3.0
 django-simple-captcha==0.5.1
-gtfs-realtime-bindings==0.0.6
+gtfs-realtime-bindings==0.0.7  # ultima con Python 2.7; la 1.0.0 e solo Py3
 ipython==4.1.2
 lxml==3.3.3
 marisa-trie==0.7.2
 Markdown
-protobuf==3.11.2
+protobuf==3.17.3  # ultima serie che supporta ancora Python 2.7
 psycopg2-binary==2.8.6
 ptyprocess==0.5.1
 pyproj==2.2.2  # ultima release che supporta ancora Python 2.7; porta PROJ 6
