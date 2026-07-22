@@ -35,7 +35,7 @@ from risorse import models as risorse
 from django.contrib.gis.geos import Point, GEOSGeometry, LineString
 from pprint import pprint
 from paline import geomath
-from servizi.unicode_csv import UnicodeLazyDictWriter, UnicodeDictReader
+from servizi.unicode_csv import UnicodeLazyDictWriter, UnicodeDictReader, csv_open
 import traceback
 
 config = {
@@ -179,9 +179,9 @@ class Command(BaseCommand):
 			print("Importo nuove istanze")
 			headers = None
 			if options['geocode']:
-				with open(csvfile, 'r') as f:
-					with open(csvgeofile, 'a') as fg:
-						with open(csverrfile, 'w') as fw:
+				with csv_open(csvfile, 'r', encoding=encoding) as f:
+					with csv_open(csvgeofile, 'a', encoding=encoding) as fg:
+						with csv_open(csverrfile, 'w', encoding=encoding) as fw:
 							reader = UnicodeDictReader(f, delimiter=';', encoding=encoding)
 							geo_writer = UnicodeLazyDictWriter(fg, delimiter=';', encoding=encoding)
 							err_writer = UnicodeLazyDictWriter(fw, delimiter=';', encoding=encoding)
@@ -211,8 +211,8 @@ class Command(BaseCommand):
 									err_writer.writerow(row)
 									pprint(row)
 			else:
-				with open(csvfile, 'r') as f:
-					with open(csverrfile, 'w') as fw:
+				with csv_open(csvfile, 'r', encoding=encoding) as f:
+					with csv_open(csverrfile, 'w', encoding=encoding) as fw:
 						reader = UnicodeDictReader(f, delimiter=';', encoding=encoding)
 						err_writer = UnicodeLazyDictWriter(fw, delimiter=';', encoding=encoding)
 						writer = None
