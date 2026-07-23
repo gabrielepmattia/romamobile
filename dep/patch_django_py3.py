@@ -28,9 +28,9 @@ D = os.path.dirname(django.__file__)
 def patch(path, old, new):
     full = os.path.join(D, path)
     s = open(full).read()
-    assert old in s, "stringa da patchare non trovata in %s" % path
     if new in s:
-        return  # gia' applicata
+        return  # gia' applicata (idempotente: l'immagine la bake, i test la rifanno)
+    assert old in s, "stringa da patchare non trovata in %s" % path
     open(full, 'w').write(s.replace(old, new))
 
 
@@ -51,6 +51,18 @@ patch(
     "        if _classcell is not None:\n"
     "            _ns['__classcell__'] = _classcell\n"
     "        new_class = super_new(cls, name, bases, _ns)",
+)
+
+# 3) QuerySet._result_iter e' un generatore che fa `raise StopIteration` per
+#    fermarsi. Da Python 3.7 (PEP 479) uno StopIteration che esce da un
+#    generatore diventa RuntimeError, e questo rompe *ogni* iterazione di
+#    QuerySet ("generator raised StopIteration"). Si sostituisce con `return`.
+#    (I `raise StopIteration()` di multipartparser NON si toccano: sono in
+#    metodi __next__, dove sono corretti e non soggetti alla PEP 479.)
+patch(
+    os.path.join('db', 'models', 'query.py'),
+    "            if not self._iter:\n                raise StopIteration",
+    "            if not self._iter:\n                return",
 )
 
 print("Django %s patchato per Python 3 (html_parser + __classcell__)"

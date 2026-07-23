@@ -2203,7 +2203,13 @@ class Rete(object):
 			self.indice_stat_periodi_aggregazione = res['indice_stat_periodi_aggregazione']
 			f.close()
 
-		except IOError:
+		# `Exception` e non solo `IOError`: la cache rete*.v3.dat e' solo
+		# un'ottimizzazione (il database e' la sorgente). Va ricostruita non solo
+		# se manca (IOError) ma anche se non e' leggibile -- in particolare un
+		# pickle scritto da Python 2, che su Python 3 fallisce con
+		# UnicodeDecodeError sulle stringhe di byte. Ricostruita da DB, viene
+		# riscritta nel formato dell'interprete corrente: succede una volta sola.
+		except Exception:
 			print("Costruisco rete da database")
 			r = self
 			ser = []
@@ -3430,7 +3436,9 @@ def carica_rete_su_grafo(r, g, retina=False, versione=None):
 	gc = r.geocoder
 	try:
 		g.deserialize(geocoding_file)
-	except IOError:
+	# `Exception` (non solo IOError): come per la cache rete, archi_geocoding
+	# e' ricalcolabile, e un pickle Py2 su Py3 non si carica -- si ricalcola.
+	except Exception:
 		print("Necessario ricalcolo")
 		ps = [r.paline[k] for k in r.paline if not r.paline[k].soppressa]
 		dp = DijkstraPool(g, 1)
