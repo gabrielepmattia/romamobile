@@ -1118,6 +1118,52 @@ isolati per la reversibilità, ma il rischio è basso e la validazione li copre 
     l'aggiornamento arrivi torna a completare. Un guasto latente data-dipendente, da
     guardare a parte (una guardia su `v == 0`), non parte del flip.
 
+- **Fase 1 · batch 18 — IL FLIP a Python 3.9.** L'ultimo passo, irreversibile, che
+  porta l'*intero* runtime su Python 3 (lo stage JS `pyjs` resta Py2.7: è morto, va in
+  Fase 3). Ogni pezzo rischioso era già stato ritirato nei batch 14-17, quindi qui
+  restano l'interprete, i bump di dipendenza Py3-only, e Cython 3.
+  - **Base image `python:3.9-buster`, non bullseye/bookworm.** Scelta a rischio minimo:
+    stesso Debian **buster** del vecchio stage Py2, quindi **stesse** GEOS 3.7 / GDAL /
+    PROJ. GeoDjango di Django 1.5 è ctypes puro e sensibile alla versione di GEOS;
+    tenendo la libreria identica, i suoi binding si comportano come su Py2 — cambia solo
+    l'interprete. Misurato: `from django.contrib.gis.geos import Point; Point(12.5,41.9)`
+    funziona su `python:3.9-buster` col solito workaround (che ora patcha
+    `python3.9/.../libgeos.py`, non `python2.7`).
+  - **`Dockerfile`:** runtime `python:2.7.18-buster` → `python:3.9-buster`;
+    `python-dev python-psycopg2` → `python3-dev` (psycopg2 arriva dal wheel binario).
+  - **`requirements.txt` — i bump Py3-only**, con le versioni scelte non a caso:
+    - `Cython` 0.29.37 → **3.0.11** (i `.pyx` sono a `language_level=3`).
+    - `Pillow` 2.3.0 → **9.5.0**: ultima major con `draw.textsize()`, usata da
+      `views.py`; la 10 la rimuove.
+    - `pyproj` 2.2.2 → **3.6.1** (PROJ 9), `protobuf` 3.17.3 → **3.20.3** (con le
+      bindings gtfs 0.0.7), `marisa-trie` → 1.2.1, `psycopg2-binary` → 2.9.9,
+      `requests`/`pytz`/`gunicorn`/`ipython`/`Markdown` aggiornati.
+    - **`+six`**, richiesto da `django-json-rpc` su Py3.
+    - `Django` resta **1.5.12**, `rpyc` 4.1.5, `pyshp` 2.1.3, `polyline` 1.4.0,
+      `beautifulsoup4` 4.9.3, `django-constance`/`json-rpc`/`picklefield` invariati.
+    - Non serve più `--no-deps`: era `django-simple-captcha` (rimosso al batch 14) a
+      far esplodere il resolver con `Django>=1.7`; senza, l'install è pulito.
+  - **`.pyx` a `language_level=3`** (grafo, geocoder — i `bt/*` restano lv2, fanno
+    fallback): convertiti i 12 `print "..."` → `print(...)`, e `c = i / 2` → `c = i // 2`
+    in `grafo.pyx:480` (con lv3 la `/` diventa divisione vera `double`, ma è un indice
+    heap `long`: sotto lv2 era già floor division, `//` è l'equivalente esatto).
+  - **Validato in laboratorio prima del deploy** (container `python:3.9-buster`):
+    install pulito, GeoDjango+Point ok, il path Pillow di `views.py` (`textsize`+`text`+
+    `save`) ok, e `grafo.pyx`/`geocoder.pyx` cythonizzano sotto **Cython 3 +
+    `language_level=3`**. L'import dei moduli che parlano col DB va provato sull'host
+    (in locale falliscono solo perché manca `postgis`, non per Py3).
+  - **Ciò che il deploy deve verificare, e che il resto della migrazione ha preparato:**
+    - `check_imports` **200-ish moduli, 0 falliti** contro l'immagine Py3.
+    - **tutte le equivalenze** (`check_proj_equivalence`, `check_gtfs_rt_equivalence`,
+      `check_polyline_equivalence`, `check_csv_equivalence`, `check_sort_equivalence`)
+      contro l'immagine Py3, perché i bump di `pyproj`/`protobuf` cambiano libreria.
+    - il **contratto RPC**: qui l'impronta *cambierà* per forza — su Py2 un testo si
+      picklava `unicode`, su Py3 `str`; un byte `str`→`bytes`. Va guardata una per una:
+      `unicode→str` (testo) e `str→bytes` (byte veri) sono i rename attesi di Py3;
+      l'unica cosa da temere è un **testo che diventa `bytes`**, la deriva che tutta la
+      Fase 1 ha inseguito. Va poi rifatta la fotografia di riferimento su Py3.
+    - routing (itinerario invariato) e smoke 14/14.
+
 **Nota operativa (da tenere nel runbook di deploy):** quando un batch tocca un
 `.pyx`, `pyximport` invalida la cache in `~/.pyxbld` e **ricompila a runtime** al
 riavvio di `giano`. Per ~30 s dopo il restart tutti gli endpoint che passano dall'RPC
