@@ -86,8 +86,10 @@ progetto e va trattato come progetto indipendente dal backend.
 | ~~`pyproj==1.9.5.1`~~ | ✅ batch 9. Il timore sull'API era mal riposto: cambia `pyproj.transform()`, che `geomath` non chiama mai. Il rischio vero era sotto, PROJ 4 → PROJ 6; misurato nullo. |
 | ~~`rpyc==3.3.0`~~ | ✅ batch 13, → 4.1.5 (ultima con Py2; la 5.0 la droppa). Il protocollo **cambia** davvero, ed è per questo che `web` e `giano` si aggiornano insieme: resta l'unico passo non incrementale. Ma il payload viaggia come byte picklati **passati per valore**, non sulla serializzazione di RPyC — forma e tipi identici, misurati su Py2.7+4.1.5. Nessun servizio ha `on_connect`/`__init__(conn)`, quindi il cambio di istanziazione dei servizi 3→4 non ci tocca. L'unico default cambiato di nascosto (`sync_request_timeout`: assente → 30 s) è rifissato a `None`. |
 | ~~`gtfs-realtime-bindings==0.0.6`~~ | ✅ batch 11, insieme a `protobuf`. Attenzione: non era neutro — le 0.0.7 riconoscono `occupancy_status = 7` che le 0.0.6 scartavano. |
-| `django-json-rpc`, `django-constance`, `django-simple-captcha`, `django-redis` | Versioni vincolate a Django: si muovono in Fase 2. Nota: `django-simple-captcha 0.5.1` dichiara già `Django>=1.7`, e pip lo segnala a ogni build. |
-| `Pillow==2.3.0`, `lxml==3.3.3`, `requests==2.9.1`, `redis==2.10.5`, `pytz==2015.7` | Nessun ostacolo noto: hanno tutte versioni Py3. Aggiornabili quando serve. |
+| `django-json-rpc`, `django-constance` | Versioni vincolate a Django: si muovono in Fase 2. `django-json-rpc` su Py3 vuole `six`. |
+| ~~`django-simple-captcha`~~, ~~`django-redis`~~ | ✅ batch 14: **rimosse**, non usate. `captcha` non è in `INSTALLED_APPS` né importato; era anche la causa del conflitto pip `Django>=1.7`. `django-redis` non è importato da nessuna parte e la cache è `LocMemCache`. |
+| `Pillow==2.3.0`, `requests==2.9.1`, `pytz==2015.7` | Nessun ostacolo noto: hanno tutte versioni Py3. Aggiornabili col flip. |
+| ~~`lxml==3.3.3`~~, ~~`redis==2.10.5`~~ | ✅ batch 14: **rimosse**, non importate (`lxml`: il codice usa solo `xml.etree` stdlib e `bs4` con `html.parser`; `redis`: nessun uso). Tolgono due dipendenze C-extension dal flip. |
 
 ---
 
@@ -966,6 +968,38 @@ test manuali) è a carico dell'ambiente di deploy dopo ogni batch.
   linea con lo stack vivo, quindi le previsioni in tempo reale passano.
 - **Rollback pronto** in un comando: `docker tag romamobile:rollback-rpyc-20260723
   romamobile:latest` e stesso `up --force-recreate giano web`.
+
+### Verso il flip a Python 3.10 (2026-07-23)
+
+Con `rpyc` chiuso, l'ultima voce della Fase 1 è il flip dell'interprete. **Misurato
+prima di toccare qualsiasi cosa:** Django 1.5.12 gira su Python 3.4→**3.10** (import,
+configure, template, `urlresolvers`); **3.11 lo rompe** (`inspect.getargspec`, rimosso
+in 3.11 e usato da `template/base.py`). Quindi il target è **Python 3.10**. Le app di
+terze parti accoppiate a Django (`constance`, `json-rpc`, `picklefield`) **si importano**
+su Py3.10 + Django 1.5, quindi non obbligano ad anticipare la Fase 2.
+
+Il flip però non è un batch solo: è una fase con più pezzi indipendenti e ognuno
+rischioso a modo suo (Cython 3 sul core routing, `pyshp` 1→2, Pillow, il
+`PickledObjectField` con `__metaclass__` Py2-only, str/bytes). Strategia scelta:
+**ritirare su Py2 tutto ciò che è both-compatible**, un batch alla volta e validato sul
+live, così il flip finale irreversibile resta il più piccolo possibile.
+
+- **Fase 1 · batch 14 — rimozione dipendenze morte.** Tolte da `requirements.txt`
+  quattro dipendenze mai usate, verificato ovunque nel repo (non solo `.py`):
+  - `lxml` — nessun import; il codice fa XML solo con `xml.etree` stdlib e HTML con
+    `bs4`/`html.parser`. Toglie un'estensione C (header libxml2) dal build del flip.
+  - `django-simple-captcha` — non è in `INSTALLED_APPS`, non è importata, non compare
+    in url o template. Era anche la causa del `ResolutionImpossible` di pip su Py3
+    (dichiara `Django>=1.7`): rimuovendola, l'install su Py3.10 non ha più conflitti.
+  - `django-redis` + `redis` — nessun import (`redis` compariva solo nell'header di
+    licenza), e la cache è `LocMemCache`. Muore la catena di compatibilità
+    redis-py ↔ django-redis che altrimenti andava districata nel flip.
+  - **Tenuta** `django-picklefield`: non importata dal backend, ma non sono riuscito a
+    escludere che `constance` la usi internamente — si rimuove solo ciò che è certo.
+  - Richiede rebuild immagine; la validazione è il solito gate `check_imports` contro
+    l'immagine nuova (la lezione `cgpolyencode` del batch 6: una rimozione va provata
+    contro l'immagine ricostruita, non a vista). Ancora su Py2: nessun cambio di
+    comportamento, solo meno dipendenze.
 
 **Nota operativa (da tenere nel runbook di deploy):** quando un batch tocca un
 `.pyx`, `pyximport` invalida la cache in `~/.pyxbld` e **ricompila a runtime** al
