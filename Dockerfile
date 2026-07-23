@@ -14,14 +14,17 @@ COPY dep/build_js.sh .
 
 RUN bash ./build_js.sh
 
-FROM python:2.7.18-buster
+# Runtime su Python 3.9, ma sempre su Debian buster: cosi' GEOS/GDAL/PROJ
+# restano le stesse versioni con cui gira lo stack Py2, e i binding GeoDjango
+# di Django 1.5 si comportano identici -- cambia solo l'interprete.
+FROM python:3.9-buster
 
 WORKDIR /app
 
 # Install required packages
 RUN printf 'deb http://archive.debian.org/debian buster main\ndeb http://archive.debian.org/debian-security buster/updates main\n' > /etc/apt/sources.list
 RUN apt-get -o Acquire::Check-Valid-Until=false update
-RUN apt-get -y install build-essential python-dev python-psycopg2 p7zip-full libffi-dev git binutils libproj-dev gdal-bin vim
+RUN apt-get -y install build-essential python3-dev p7zip-full libffi-dev git binutils libproj-dev gdal-bin vim
 
 COPY ./src .
 COPY ./requirements.txt .
@@ -34,7 +37,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Workaround for GeoDjango-GEOS bug
 # https://stackoverflow.com/a/18721622
-RUN sed -i "s/ver = geos_version().decode()/ver = geos_version().decode().split(' ')[0]/g" /usr/local/lib/python2.7/site-packages/django/contrib/gis/geos/libgeos.py
+RUN sed -i "s/ver = geos_version().decode()/ver = geos_version().decode().split(' ')[0]/g" /usr/local/lib/python3.9/site-packages/django/contrib/gis/geos/libgeos.py
 
 
 # Extra temporary dependencies, to be moved to pyproject.toml

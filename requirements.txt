@@ -1,21 +1,21 @@
-beautifulsoup4==4.9.3  # ultima release che supporta ancora Python 2.7
-polyline==1.4.0  # ultima release che supporta ancora Python 2.7
-Cython==0.29.37  # ultima serie che compila ancora per Python 2.7
-Django==1.5.12
-Pillow==2.3.0
+beautifulsoup4==4.9.3
+polyline==1.4.0
+Cython==3.0.11  # Cython 3: i .pyx sono a language_level=3
+Django==1.5.12  # resta 1.5 in Fase 1; sale a LTS in Fase 2
+Pillow==9.5.0  # ultima major con draw.textsize(), usato in views.py (rimosso in Pillow 10)
 django-constance==1.0.1
 django-json-rpc==0.7.2
 django-picklefield==0.3.2
-gtfs-realtime-bindings==0.0.7  # ultima con Python 2.7; la 1.0.0 e solo Py3
-ipython==4.1.2
-marisa-trie==0.7.2
-Markdown
-protobuf==3.17.3  # ultima serie che supporta ancora Python 2.7
-psycopg2-binary==2.8.6
-ptyprocess==0.5.1
-pyproj==2.2.2  # ultima release che supporta ancora Python 2.7; porta PROJ 6
-pyshp==2.1.3  # 2.x cambia l'API Writer; 2.1.3 e' l'ultima con Py2.7 e gira anche su Py3
-pytz==2015.7
-requests==2.9.1
-rpyc==4.1.5  # ultima release che supporta ancora Python 2.7; la 5.0.0 la droppa
-gunicorn==19.10.0
+gtfs-realtime-bindings==0.0.7
+ipython==8.18.1  # ultima serie con Python 3.9
+marisa-trie==1.2.1
+Markdown==3.4.4
+protobuf==3.20.3  # compatibile con le bindings gtfs 0.0.7 e con Python 3.9
+psycopg2-binary==2.9.9
+pyproj==3.6.1  # il wheel porta PROJ 9; equivalenza verificata
+pyshp==2.1.3
+pytz==2024.1
+requests==2.31.0
+rpyc==4.1.5
+gunicorn==21.2.0
+six==1.16.0  # richiesto da django-json-rpc su Python 3

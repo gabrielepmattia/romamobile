@@ -1,5 +1,5 @@
 # coding: utf-8
-# cython: language_level=2
+# cython: language_level=3
 # cython: profile=False
 
 #
@@ -333,7 +333,7 @@ class Grafo(GrafoDijkstra):
 
 	def serialize(self, filename, classi_archi=None, classi_nodi=None):
 		grafo = self
-		print "Saving graph in proprietary format..."
+		print("Saving graph in proprietary format...")
 		nodi = []
 		for n in grafo.nodi:
 			nodo = grafo.nodi[n]
@@ -344,23 +344,23 @@ class Grafo(GrafoDijkstra):
 			arco = grafo.archi[a]
 			if classi_archi is None or arco.__class__ in classi_archi:
 				archi.append(arco.serialize())
-		print "Saving"
+		print("Saving")
 		f = open(filename, 'wb')
 		f.write(pickle.dumps({
 			'nodi': nodi,
 			'archi': archi,
 		}, 2)	)
 		f.close()
-		print "Done"
+		print("Done")
 
 		
 	def deserialize(self, filename, classi_archi=None, classi_nodi=None):
 		grafo = self
-		print "Loading graph from proprietary file..."
+		print("Loading graph from proprietary file...")
 		f = open(filename, 'rb')
 		res = pickle.loads(f.read())
 		f.close()
-		print "Deserializing graph..."
+		print("Deserializing graph...")
 		for n in res['nodi']:
 			c = self.tipi_nodi[n['id'][0]]
 			if classi_nodi is None or c in classi_nodi:
@@ -477,7 +477,10 @@ cdef class PQ(object):
 	cdef void _move_down(self, long i) nogil:
 		cdef long c
 		if i > 0:
-			c = i / 2
+			# `//` e non `/`: con language_level=3 la `/` diventa divisione vera
+			# (double), ma qui `c` e' un indice long dell'heap. Sotto lv2 la `/`
+			# era gia' floor division intera, quindi `//` e' l'equivalente esatto.
+			c = i // 2
 			if self.p[c] > self.p[i]:
 				self._swap(c, i)
 				self._move_down(c)
@@ -710,7 +713,7 @@ cdef class Dijkstra(object):
 		sv.pred = None
 		self.pool.rm_nodo(ai.s)
 		
-		print "Dijkstra done, %d nodes reached" % (cnt,)
+		print("Dijkstra done, %d nodes reached" % (cnt,))
 		
 		if get_unreachable:
 			unr = set()
@@ -804,7 +807,7 @@ cdef class Dijkstra(object):
 		tv.next = None
 		self.pool.rm_nodo(au.t)
 		
-		print "Dijkstra done, %d nodes reached" % (cnt,)
+		print("Dijkstra done, %d nodes reached" % (cnt,))
 		
 		if get_unreachable:
 			unr = set()
@@ -976,7 +979,7 @@ cdef class Dijkstra(object):
 		sv.pred = None
 		self.pool.rm_nodo(ai.s)
 		
-		print "Dijkstra done, %d nodes reached" % (cnt,)
+		print("Dijkstra done, %d nodes reached" % (cnt,))
 		
 		
 
@@ -1235,7 +1238,7 @@ cpdef cerca_vicini_tragitto(Dijkstra dijkstra1, Dijkstra dijkstra2, NodoDijkstra
 		sv1.pred = None
 		dijkstra1.pool.rm_nodo(ai.s)
 		
-		print "Dijkstra done, %d nodes reached" % (cnt,)
+		print("Dijkstra done, %d nodes reached" % (cnt,))
 		
 		return esci
 

@@ -1,5 +1,5 @@
 # coding: utf-8
-# cython: language_level=2
+# cython: language_level=3
 #cython: cdivision=True
 
 #
@@ -247,7 +247,7 @@ cdef class SegmentRepo(object):
 
 	def serialize_cache(self):
 		if self.caching and self.dirty_cache:
-			print "Serializing geocoder"
+			print("Serializing geocoder")
 			with open(os.path.join(settings.TROVALINEA_PATH_RETE, "geocoding_cache_%s.dat" % self.caching_id), "w") as f:
 				pickle.dump(self.cache, f, protocol=-1)
 
@@ -386,13 +386,13 @@ class Geocoder(object):
 				if e.auto:
 					pold = e.punti[0]
 					if pold != e.s.get_coordinate()[0]:
-						print "s errato"
+						print("s errato")
 					for i in range(1, len(e.punti)):
 						p = e.punti[i]
 						self.repo.add_segment(pold, p, (e, i - 1))
 						pold = p
 					if pold != e.t.get_coordinate()[0]:
-						print "t errato"				
+						print("t errato")
 		self.repo.freeze()
 
 	def serialize_cache(self):
