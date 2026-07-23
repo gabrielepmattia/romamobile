@@ -971,12 +971,27 @@ test manuali) è a carico dell'ambiente di deploy dopo ogni batch.
 
 ### Verso il flip a Python 3.10 (2026-07-23)
 
-Con `rpyc` chiuso, l'ultima voce della Fase 1 è il flip dell'interprete. **Misurato
-prima di toccare qualsiasi cosa:** Django 1.5.12 gira su Python 3.4→**3.10** (import,
-configure, template, `urlresolvers`); **3.11 lo rompe** (`inspect.getargspec`, rimosso
-in 3.11 e usato da `template/base.py`). Quindi il target è **Python 3.10**. Le app di
+Con `rpyc` chiuso, l'ultima voce della Fase 1 è il flip dell'interprete. Le app di
 terze parti accoppiate a Django (`constance`, `json-rpc`, `picklefield`) **si importano**
-su Py3.10 + Django 1.5, quindi non obbligano ad anticipare la Fase 2.
+su Py3 + Django 1.5, quindi non obbligano ad anticipare la Fase 2.
+
+**Sul target Python — una lezione su cosa vuol dire "misurare".** Un primo probe
+minimo (import + `settings.configure` + un template + `urlresolvers`) passava fino a
+Python **3.10** e si fermava a **3.11** (`inspect.getargspec`, rimosso in 3.11 e usato
+da `template/base.py`). Da lì avevo concluso "target 3.10" — **sbagliato**: quel probe
+non toccava l'ORM. Appena un probe esercita un `models.Field` con `choices` (via il
+test del batch 16), Python **3.10** si rompe pure lui: Django 1.5 usa
+`collections.Iterator` e `collections.Sequence` in `utils/itercompat.py`, alias
+**rimossi in 3.10** (spostati in `collections.abc`, deprecati dal 3.3). Su **3.9** gli
+alias ci sono ancora (solo un `DeprecationWarning`) e l'ORM gira. Quindi:
+- **Python 3.9**: Django 1.5 gira *senza patch* (è il soffitto pulito).
+- **Python 3.10**: serve uno shim di ~5 righe che ripristina gli alias
+  (`collections.Iterator/Sequence/...` da `collections.abc`) a import-time.
+- **Python 3.11**: fuori, `getargspec` è una funzione rimossa, non un alias.
+
+Da decidere al batch del flip: 3.9 pulito o 3.10+shim. La morale sta nel metodo — il
+soffitto vero l'ha dato solo il probe che esercitava il pezzo giusto (l'ORM), non
+quello che sembrava "abbastanza".
 
 Il flip però non è un batch solo: è una fase con più pezzi indipendenti e ognuno
 rischioso a modo suo (Cython 3 sul core routing, `pyshp` 1→2, Pillow, il
@@ -1020,6 +1035,32 @@ live, così il flip finale irreversibile resta il più piccolo possibile.
     in testa, `record[i-1]` posizionale, `shape.points`) — dà lo **stesso risultato**
     su Py2.7+pyshp 2.1.3 e Py3.10+pyshp 2.1.3. Both-compatible: deployabile sul live
     Py2, validazione end-to-end sull'endpoint di export.
+
+- **Fase 1 · batch 16 — `PickledObjectField` e il `__metaclass__` fantasma.** Il campo
+  custom in `servizi/utils.py` (usato da `paline.models` per `eid`, `punti`,
+  `percorso`, `opzioni`) dichiarava `__metaclass__ = models.SubfieldBase`. Quella
+  sintassi è **Python 2 soltanto**: su Python 3 l'attributo `__metaclass__` è
+  ignorato in silenzio, e la metaclasse — che installa il descriptor che chiama
+  `to_python()` all'assegnazione — non verrebbe applicata. Non un errore: un campo
+  che smette di deserializzare, restituendo la stringa base64 grezza al posto
+  dell'oggetto. Il tipo di regressione che né `compileall` né `check_imports` vedono.
+  - Convertito con `six.with_metaclass(SubfieldBase, Field)`, ma scritto a mano in
+    `servizi/py3compat.py` per non aggiungere `six` alle dipendenze (stessa scelta di
+    `text_type`/`cmp`: niente rebuild per un batch che tocca solo `src`).
+  - **Misurato su entrambe le versioni + Django 1.5**, con un modello che ha sia il
+    campo vecchio sia il nuovo, assegnando un valore picklato+b64:
+
+    | | Py2.7 | Py3.9 |
+    |---|---|---|
+    | `with_metaclass(...)` | decodificato `{'k': 1}` | decodificato `{'k': 1}` |
+    | `__metaclass__ = ...` | decodificato `{'k': 1}` | **`b'gAJ9...'` grezzo** |
+
+    Cioè: su Py2 le due forme sono **identiche** (il fix non cambia nulla in
+    produzione oggi); su Py3 la vecchia forma era rotta e la nuova la ripara. Il caso
+    di prova è esattamente il rischio reale del campo. Both-compatible, `src`-only.
+  - **Nota:** resta un tema str/bytes più sotto nel campo (`PickledObject(str)`,
+    `b64encode` che torna `bytes`, `force_unicode`): è correttezza da validare *al
+    flip* caricando/salvando davvero i campi su Py3, non parte di questo batch.
 
 **Nota operativa (da tenere nel runbook di deploy):** quando un batch tocca un
 `.pyx`, `pyximport` invalida la cache in `~/.pyxbld` e **ricompila a runtime** al
