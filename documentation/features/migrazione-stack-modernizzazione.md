@@ -1164,6 +1164,48 @@ isolati per la reversibilità, ma il rischio è basso e la validazione li copre 
       Fase 1 ha inseguito. Va poi rifatta la fotografia di riferimento su Py3.
     - routing (itinerario invariato) e smoke 14/14.
 
+### Tentativo di deploy del flip 2026-07-23 (`hetzner-4gb-1`) — rollback
+
+Il flip è stato provato in produzione e **riportato indietro**: import, dipendenze e
+immagine erano a posto, ma è emerso a runtime il rischo che questa roadmap teneva in
+cima al registro fin dall'inizio — **str/bytes nei pickle**.
+
+- **Fino a dove è arrivato, tutto verde:** immagine Py3.9 costruita; `check_imports`
+  **199 moduli, 0 falliti**; equivalenze **proj** (PROJ 6→9, scarto 1 nm), **gtfs**
+  (protobuf 3.17→3.20, identici) e **csv** tutte passate. Per arrivarci sono servite le
+  due patch a Django 1.5 (`dep/patch_django_py3.py`) e i cinque fix app del commit
+  precedente.
+- **Dove si è rotto:** promossa l'immagine e ricreati `giano`+`web`, `giano` è entrato
+  in **restart loop**. `web` reggeva (Python 3.9), ma `giano` moriva al caricamento
+  della rete con `UnicodeDecodeError: 'ascii' codec can't decode byte 0xcb`. Localizzato
+  con un traceback pulito a **`tpl.py:2190`**:
+
+  ```python
+  res = pickle.loads(f.read())   # rete*.v3.dat, serializzata su Py2
+  ```
+
+  La cache di rete (`rete.v3.dat`) è un pickle scritto da Py2, con stringhe di byte
+  (nomi di fermate accentati). Su Py3 `pickle.loads` prova a decodificarle come ASCII e
+  scoppia sul primo `0xcb`. Serve `encoding=` (o rigenerare la cache su Py3), e lo stesso
+  vale per il `deserialize` del grafo e per il payload RPyC — tutti pickle Py2.
+- **Rollback pulito, servizio ripristinato.** Reimmagine Py2, e — la parte che il primo
+  tentativo di rollback ha mancato — **anche la `src`**: i `.pyx` erano a
+  `language_level=3`, che su un interprete Py2 dà semantiche stringa sbagliate e fa
+  ripartire il loop pure sul Py2. Riportata la `src` al commit pre-flip (`d6e41b6`),
+  `giano` è tornato **RestartCount=0** su Python 2.7.18, smoke 14/14. **Lezione per il
+  runbook: il flip non è solo l'immagine, è immagine + `language_level` dei `.pyx`; il
+  rollback deve riportare entrambi.** L'host è stato riportato interamente a `d6e41b6`
+  (tree pulito), così un eventuale rebuild dà di nuovo l'immagine Py2 funzionante.
+- **Stato:** i commit del flip restano su `origin/master` (import/dipendenze/immagine
+  sono lavoro valido e corretto), ma il flip **non è deployabile** finché non si chiude
+  lo str/bytes runtime. La produzione è su Py2 (batch 17 + bugfix), sana. L'immagine Py3
+  resta pronta come `romamobile:test`, e `romamobile:rollback-py2-preflip-20260723`
+  conserva il Py2 promosso.
+- **Cosa manca per ri-tentare:** un giro di correzioni str/bytes sui pickle Py2↔Py3
+  (`tpl.py:2190` e i fratelli: `deserialize` del grafo, le altre cache, il payload
+  RPyC), con il test del contratto RPC a fare da rete — è esattamente il punto per cui
+  era stato costruito. È una fase a sé, non un ritocco.
+
 **Nota operativa (da tenere nel runbook di deploy):** quando un batch tocca un
 `.pyx`, `pyximport` invalida la cache in `~/.pyxbld` e **ricompila a runtime** al
 riavvio di `giano`. Per ~30 s dopo il restart tutti gli endpoint che passano dall'RPC
