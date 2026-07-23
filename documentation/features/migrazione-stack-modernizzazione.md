@@ -1079,6 +1079,32 @@ isolati per la reversibilità, ma il rischio è basso e la validazione li copre 
   nel container di produzione genera uno zip di 852 byte con tutti e quattro i pezzi
   (`.shp/.shx/.dbf/.prj`) su pyshp 2.1.3. La migrazione dell'API Writer regge end-to-end.
 
+- **Fase 1 · batch 17 — `grafo.pyx` pronto per Cython 3.** Il batch 7 aveva già
+  avvisato: la 0.29 dava *warning* su `grafo.pyx` che Cython 3 avrebbe trasformato in
+  errori. Sono due, entrambi nel `cdef class DijkstraVars`, e li ho verificati
+  cythonizzando davvero con Cython 3:
+  - `cpdef long versione_cp` / `cpdef object time` → **`cdef`**. Cython 3 non supporta
+    più `cpdef` sulle *variabili*; già in 0.29 era trattato come `cdef` (privato), e
+    sono le `property` esplicite sotto a esporli a Python — quindi il cambio è a
+    **semantica invariata**.
+  - `import time` **rimosso**: il modulo non era mai usato (nessun `time.xxx`), ma il
+    nome collideva con l'attributo `time` della classe e con la locale `time = vv.time`
+    in `dijkstra()`. In 0.29 era il warning *"cdef variable 'time' declared after it is
+    used"*; in Cython 3 è un **errore duro**. Tolto l'import morto, la collisione sparisce.
+  - **Misurato, non supposto:** dopo il fix, `cython grafo.pyx` con **Cython 3** genera
+    il `.c` (48951 righe) senza errori, **e** `grafo.pyx` continua a compilare con
+    **Cython 0.29** (il compilatore del deploy attuale). Quindi è both-compatible: si
+    deploya oggi su Py2, e non ha più nulla che blocchi il flip.
+  - **Resta per il flip (batch 18), non per ora:** grafo e geocoder hanno ancora
+    `print "..."` statement (`grafo.pyx:336`, `geocoder.pyx:250/389/395`), che a
+    `language_level=2` Cython accetta ma a **`language_level=3`** rifiuta. Vanno
+    convertiti in `print(...)` insieme al cambio di pragma. `geocoder.pyx` per il resto
+    compila già sotto Cython 3. I `bt/*.pyx` restano fuori: falliscono-e-fanno-fallback
+    già oggi (batch 7), su Cython 3 idem.
+  - `src`-only (nessun `requirements`): deploy = `git pull` + restart di `giano`
+    (`pyximport` ricompila il `.pyx`). Validazione sul live: il test di caratterizzazione
+    del routing, impronta identica prima/dopo.
+
 **Nota operativa (da tenere nel runbook di deploy):** quando un batch tocca un
 `.pyx`, `pyximport` invalida la cache in `~/.pyxbld` e **ricompila a runtime** al
 riavvio di `giano`. Per ~30 s dopo il restart tutti gli endpoint che passano dall'RPC
