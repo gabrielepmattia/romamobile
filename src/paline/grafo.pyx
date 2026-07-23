@@ -25,7 +25,10 @@
 
 from copy import copy
 from datetime import datetime, timedelta
-import time
+# `import time` rimosso: il modulo non era mai usato (nessun `time.xxx`), e il
+# nome collideva con l'attributo `time` di DijkstraVars e con la variabile
+# locale `time` in dijkstra() -- collisione che Cython 3 rifiuta come errore
+# ("cdef variable 'time' declared after it is used"), non piu' solo warning.
 from . import tratto
 try:
 	import cPickle as pickle
@@ -65,8 +68,11 @@ cdef class DijkstraVars(object):
 	cdef long pqi
 	cdef double prio
 	cdef double heu
-	cpdef long versione_cp
-	cpdef object time
+	# Cython 3 non supporta piu' `cpdef` sulle *variabili*; gia' in 0.29 era
+	# trattato come `cdef` (privato), e sono le `property` esplicite sotto a
+	# esporli a Python. Il cambio e' quindi a semantica invariata.
+	cdef long versione_cp
+	cdef object time
 	cdef long context_i
 	
 	def __init__(self):
