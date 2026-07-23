@@ -208,8 +208,10 @@ sull'host di deploy.
       ricompilazione Cython) e i moduli top-level di `src/`, che sono caricati come
       top-level e quindi devono restare assoluti.
 - [x] Affrontare a mano i punti `unicode()` e i `cmp=` (→ `cmp_to_key`), via
-      `servizi/py3compat.py`. Restano da rivedere i punti str/bytes veri (pickle,
-      RPyC, I/O di file), che non sono una sostituzione meccanica.
+      `servizi/py3compat.py`. I punti str/bytes veri sui pickle sono chiusi: cache su
+      file e PEP 479 di Django (batch 19), pickle base64 su colonne di testo (batch 20).
+      Resta il **payload RPyC**, che non è codice da cambiare ma la fotografia del
+      contratto da rifare su Py3 al deploy (rete costruita in Fase 0).
 - [x] Cython 0.23.4 → 0.29.37 (ultima serie con target Py2) e `language_level=2`
       fissato esplicitamente in ogni `.pyx`. Il salto a **Cython 3** resta da fare
       insieme a Python 3: i warning già segnalano `cpdef variables` e un
@@ -1205,6 +1207,95 @@ cima al registro fin dall'inizio — **str/bytes nei pickle**.
   (`tpl.py:2190` e i fratelli: `deserialize` del grafo, le altre cache, il payload
   RPyC), con il test del contratto RPC a fare da rete — è esattamente il punto per cui
   era stato costruito. È una fase a sé, non un ritocco.
+
+### 2026-07-24 — la fase str/bytes runtime (ripresa dopo il rollback)
+
+Il flip (batch 18) era tornato indietro sul rischio in cima al registro: str/bytes nei
+pickle. La roadmap lo aveva isolato come "una fase a sé". Eccola: due batch, entrambi
+`src`-only (nessun rebuild immagine) e both-compatible Py2/Py3 — deployabili sul live
+Py2 senza cambiarne il comportamento, e costruiti per reggere il flip.
+
+- **Fase 1 · batch 19 — str/bytes nei pickle su file + PEP 479 di Django** (`51d2ba0`).
+  I pickle che il flip ha fatto esplodere in `giano` sono cache su file scritte da Py2.
+  Stanati riproducendo il caricamento completo della rete su Python 3:
+  - `tpl.py` — le cache `rete*.v3.dat` e `archi_geocoding*.v3.dat` sono pickle Py2 che
+    su Py3 falliscono (`UnicodeDecodeError` sui nomi di fermata accentati). Sono **solo
+    ottimizzazioni** (il DB è la sorgente): il fallback di caricamento è passato da
+    `except IOError` a `except Exception`, così una cache illeggibile/incompatibile
+    viene **ricostruita dal DB** e riscritta nel formato dell'interprete corrente, una
+    volta sola. Il pickle del grafo OSM è numerico e si carica su Py3 senza problemi; la
+    cache del geocoder aveva già un `except` ampio.
+  - `patch_django_py3.py` — `QuerySet._result_iter` di Django 1.5 è un generatore che fa
+    `raise StopIteration` per fermarsi; da Python 3.7 (PEP 479) quello diventa
+    `RuntimeError` e rompe **ogni** iterazione di QuerySet. Patchato a `return`. (I
+    `raise StopIteration()` di `multipartparser` sono in metodi `__next__`, corretti lì,
+    lasciati stare.) Reso idempotente lo script di patch: gira sia al build sia nei test.
+  - **Misurato:** il caricamento completo della rete (`carica` → grafo →
+    `carica_rete_su_grafo`) ora **completa su Python 3** — 8291 paline, 1151 percorsi.
+
+- **Fase 1 · batch 20 — str/bytes nei pickle base64 su colonne di testo.** Restavano "le
+  altre cache" e i pickle persistiti: tre campi serializzano un oggetto in pickle →
+  base64 → `TextField`, e tutti e tre si rompono al flip in modi che né `compileall` né
+  `check_imports` vedono:
+  - `PickledObjectField` (`servizi/utils.py`, `dbsafe_encode`/`dbsafe_decode`), usato da
+    `paline.models` per `ArcoRimosso.eid` e `PercorsoSalvato`;
+  - `paline.models.ReteDinamicaSerializzata` (`set_rete`/`get_rete`);
+  - `carpooling.models.PercorsoSalvato` (`set_percorso`/`get_percorso`).
+  - **Due bug distinti, entrambi certi su Py3.9:**
+    - `base64.encodestring`/`decodestring` sono **rimosse in Python 3.9** (deprecate
+      dalla 3.1) → `AttributeError` secco. Colpisce `ReteDinamicaSerializzata` e la
+      `PercorsoSalvato` del carpooling.
+    - `base64.b64encode` su Py3 torna **`bytes`**: wrapparlo in `PickledObject`
+      (sottoclasse di `str`) o assegnarlo a una colonna di testo lo stringa come
+      `"b'gAJ9...'"`, col prefisso `b'` incluso — dato corrotto. Colpisce ogni scrittura
+      di `PickledObjectField` (misurato: `PickledObject(raw)` su Py3.9 = `"b'gAJ9cQBY…='"`).
+  - **La correzione, centralizzata in `servizi/py3compat.py`** (stessa scelta di
+    `text_type`/`cmp`: nessuna dipendenza nuova, nessun rebuild):
+    - `b64encode_text(data)` — base64 come **testo** su entrambe le versioni (su Py2
+      byte-identico al vecchio `b64encode`, che è già ASCII);
+    - `b64decode_bytes(text)` — inverso via `b64decode`, che su entrambe **scarta i
+      caratteri fuori alfabeto**, quindi legge anche le righe storiche scritte da
+      `encodestring` (a capo ogni 76 char);
+    - `pickle_loads_py2compat(data)` — `pickle.loads` che su un `UnicodeDecodeError`
+      (pickle Py2 con byte-string) ritenta con `encoding='latin1'`: mappa i byte 1:1 e
+      non fallisce mai. Su Py2 il ramo di ripiego non è raggiungibile.
+  - **Misurato invece che sperato** — `scripts/check_pickle_field_equivalence.py`, sui
+    tre payload reali (tupla di interi come `eid`, testo accentato, struttura annidata
+    tipo percorso salvato), su Py2.7/Py3.9/Py3.11:
+
+    | | round-trip locale | no-corruzione | cross-version (blob Py2 → letto su Py3) | byte-identità Py2 |
+    |---|---|---|---|---|
+    | Py2.7 | OK | OK | (sorgente) | **identico** al vecchio b64encode |
+    | Py3.9 | OK | OK | **OK** | — |
+    | Py3.11 | OK | OK | **OK** | — |
+
+    Cioè: una riga scritta da Python 2 (incluso testo accentato) si rilegge intatta su
+    Python 3, il round-trip regge sull'interprete nuovo, e su Python 2 la
+    rappresentazione in colonna **non cambia** (le righe già in tabella non si toccano).
+    `compileall` pulito su 2.7 e 3.11; pyflakes senza nomi non definiti.
+  - **Rimossi tre import diventati orfani** (`import base64` in `paline/models.py` e
+    `carpooling/models.py`, `from base64 import b64encode, b64decode` in `utils.py`),
+    per tenere pyflakes pulito come dai batch 5/10.
+  - **Nota su `ReteDinamicaSerializzata`:** è di fatto **codice morto** — l'unico
+    chiamante (`runtrovalinea_new.py:98`, `deserializza_dinamico_db()`) invoca un metodo
+    **che non esiste**, dentro un `try/except` che stampa "fallita" e prosegue. Corretto
+    comunque per uniformità con gli altri due (stesso identico pattern, così `encodestring`
+    sparisce dal tree), ma non è sul percorso caldo.
+  - **Trovato per strada, preesistente, non toccato:** `paline/views.py:1438`, l'endpoint
+    JSON-RPC `GetVeicoliPercorsoConPrevisioni` (integrazione Università di Tor Vergata)
+    chiama `c.root.veicoliarshali_percorsi(True, True)` — nome di metodo **corrotto**
+    (nessun `exposed_veicoliarshali_percorsi` esiste) e per giunta senza passare
+    `id_percorso`. Rotto dall'*Initial reimport*, non è str/bytes né migrazione: va
+    corretto a parte, capendo la semantica voluta (probabilmente
+    `veicoli_percorso(id_percorso, True, True)`).
+
+- **Cosa resta della fase str/bytes:** il **payload RPyC** fra `web` e `giano`. Su uno
+  stack Py3 omogeneo è pickle Py3→Py3 passato per valore: atteso intatto, ma è
+  esattamente ciò che il **test del contratto RPC** deve misurare sul live dopo il flip —
+  un `unicode→str` (testo) e uno `str→bytes` (byte veri) sono i rename attesi; l'unica
+  cosa da temere è un testo che diventa `bytes`. Va poi rifatta la fotografia di
+  riferimento su Py3. Non è codice da cambiare qui: è la verifica di deploy che la
+  Fase 0 ha costruito.
 
 **Nota operativa (da tenere nel runbook di deploy):** quando un batch tocca un
 `.pyx`, `pyximport` invalida la cache in `~/.pyxbld` e **ricompila a runtime** al
