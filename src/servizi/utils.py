@@ -58,6 +58,7 @@ except ImportError:  # Python 3
 import re
 from copy import deepcopy
 from base64 import b64encode, b64decode
+from .py3compat import with_metaclass
 from zlib import compress, decompress
 from django.db import models
 from django import db
@@ -694,7 +695,7 @@ def dbsafe_decode(value, compress_object=False):
         value = pickle.loads(decompress(b64decode(value)))
     return value
 
-class PickledObjectField(models.Field):
+class PickledObjectField(with_metaclass(models.SubfieldBase, models.Field)):
     """
     A field that will accept *any* python object and store it in the
     database. PickledObjectField will optionally compress it's values if
@@ -707,8 +708,6 @@ class PickledObjectField(models.Field):
     None values since they aren't pickled and encoded.
     
     """
-    __metaclass__ = models.SubfieldBase
-    
     def __init__(self, *args, **kwargs):
         self.compress = kwargs.pop('compress', False)
         self.protocol = kwargs.pop('protocol', 2)

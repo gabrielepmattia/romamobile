@@ -50,3 +50,24 @@ def cmp(a, b):
 	Python 2 il comportamento e' identico a quello del builtin che oscura.
 	"""
 	return (a > b) - (a < b)
+
+
+def with_metaclass(meta, *bases):
+	"""
+	Crea una classe base con la metaclasse `meta`, come `six.with_metaclass`.
+
+	Su Python 2 la metaclasse si dichiara con `__metaclass__ = meta` nel corpo
+	della classe; ma quell'attributo Python 3 lo **ignora in silenzio**, e la
+	metaclasse non verrebbe applicata -- un cambiamento di comportamento
+	invisibile, non un errore. Questa forma la applica su **entrambe** le
+	versioni. Su Python 2 il risultato e' identico a `__metaclass__ = meta`.
+	"""
+	class metaclass(type):
+		def __new__(cls, name, this_bases, d):
+			return meta(name, bases, d)
+
+		@classmethod
+		def __prepare__(cls, name, this_bases):
+			return meta.__prepare__(name, bases)
+
+	return type.__new__(metaclass, 'temporary_class', (), {})
