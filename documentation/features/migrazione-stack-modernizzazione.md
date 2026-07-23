@@ -1273,6 +1273,15 @@ Py2 senza cambiarne il comportamento, e costruiti per reggere il flip.
     Python 3, il round-trip regge sull'interprete nuovo, e su Python 2 la
     rappresentazione in colonna **non cambia** (le righe già in tabella non si toccano).
     `compileall` pulito su 2.7 e 3.11; pyflakes senza nomi non definiti.
+  - **Validato anche contro l'immagine Py3.9 vera** (build locale `romamobile:test`,
+    non il deploy di produzione): l'immagine si costruisce pulita (dipendenze Py3
+    installate, Django patchato), `check_imports` contro l'immagine dà **200 moduli,
+    0 falliti** (i moduli toccati importano sotto Django reale su Py3.9), e un
+    **round-trip ORM su PostgreSQL** — `ArcoRimosso.eid` (PickledObjectField), la
+    `PercorsoSalvato` del carpooling e `ReteDinamicaSerializzata.rete`, con testo
+    accentato e simbolo € — salva e rilegge **identico**, con la colonna che contiene
+    testo base64 (non `b'...'`). È la verifica "caricando/salvando davvero i campi su
+    Py3" che il batch 16 aveva rimandato al flip: chiusa.
   - **Rimossi tre import diventati orfani** (`import base64` in `paline/models.py` e
     `carpooling/models.py`, `from base64 import b64encode, b64decode` in `utils.py`),
     per tenere pyflakes pulito come dai batch 5/10.
