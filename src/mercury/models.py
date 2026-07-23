@@ -83,6 +83,14 @@ Uso come client del servizio peer_type:
 config = {
 	'allow_public_attrs': True,
 	'allow_pickle': True,
+	# RPyC 3.3 non aveva 'sync_request_timeout' nel DEFAULT_CONFIG: una chiamata
+	# sincrona attendeva senza limite. La 4.x lo introduce con default 30 s, che
+	# trasformerebbe una chiamata lenta a `giano` (mai vista scadere prima) in un
+	# TimeoutError. `None` ripristina l'attesa infinita di 3.3: questo batch
+	# aggiorna la libreria senza cambiare il comportamento. Se un timeout finito
+	# servisse, va deciso a parte. (Misurato: con None la sync completa, con un
+	# valore finito scade -- vale anche per il nostro pattern pickle-over-bytes.)
+	'sync_request_timeout': None,
 }
 
 
