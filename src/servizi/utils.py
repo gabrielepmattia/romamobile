@@ -57,8 +57,7 @@ except ImportError:  # Python 3
 	import pickle
 import re
 from copy import deepcopy
-from base64 import b64encode, b64decode
-from .py3compat import with_metaclass
+from .py3compat import with_metaclass, b64encode_text, b64decode_bytes, pickle_loads_py2compat
 from zlib import compress, decompress
 from django.db import models
 from django import db
@@ -682,17 +681,24 @@ def dbsafe_encode(value, compress_object=False):
     simple string matches, thus the character streams must be the same
     for the lookups to work properly. See tests.py for more information.
     """
+    # b64encode_text (non b64encode): su Python 3 b64encode torna `bytes`, e
+    # PickledObject(bytes) -- essendo PickledObject una sottoclasse di str --
+    # stringherebbe il valore come "b'...'", corrompendo cio' che finisce in
+    # colonna. b64encode_text restituisce testo su entrambe le versioni; su Py2
+    # il contenuto e' byte-identico a prima (b64 e' ASCII).
     if not compress_object:
-        value = b64encode(pickle.dumps(deepcopy(value)))
+        value = b64encode_text(pickle.dumps(deepcopy(value)))
     else:
-        value = b64encode(compress(pickle.dumps(deepcopy(value))))
+        value = b64encode_text(compress(pickle.dumps(deepcopy(value))))
     return PickledObject(value)
 
 def dbsafe_decode(value, compress_object=False):
+    # pickle_loads_py2compat: tollera anche i pickle scritti da Python 2 gia'
+    # in tabella (byte-string che Py3 non decodifica come ASCII).
     if not compress_object:
-        value = pickle.loads(b64decode(value))
+        value = pickle_loads_py2compat(b64decode_bytes(value))
     else:
-        value = pickle.loads(decompress(b64decode(value)))
+        value = pickle_loads_py2compat(decompress(b64decode_bytes(value)))
     return value
 
 class PickledObjectField(with_metaclass(models.SubfieldBase, models.Field)):

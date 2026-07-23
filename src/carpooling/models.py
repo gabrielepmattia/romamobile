@@ -29,7 +29,6 @@ try:
 	import cPickle as pickle
 except ImportError:  # Python 3
 	import pickle
-import base64
 from django.utils.translation import ugettext as _
 from autenticazione.models import Telefono
 from mercury.models import Mercury
@@ -38,7 +37,7 @@ import settings
 from constance import config
 from servizi.utils import template_to_mail, group_by
 import math
-from servizi.py3compat import text_type
+from servizi.py3compat import text_type, b64encode_text, b64decode_bytes, pickle_loads_py2compat
 
 CARPOOLING_DAYS = 7
 
@@ -93,10 +92,12 @@ class PercorsoSalvato(models.Model):
 	_percorso = models.TextField(blank=True, db_column='percorso')
 	
 	def set_percorso(self, data):
-		self._percorso = base64.encodestring(pickle.dumps(data))
-	
+		# base64.encodestring e' rimossa in Python 3.9: b64encode_text la
+		# sostituisce e restituisce testo (non bytes) per la colonna.
+		self._percorso = b64encode_text(pickle.dumps(data))
+
 	def get_percorso(self):
-		return pickle.loads(base64.decodestring(self._percorso))
+		return pickle_loads_py2compat(b64decode_bytes(self._percorso))
 	percorso = property(get_percorso, set_percorso)
 
 class PassaggioOfferto(models.Model):

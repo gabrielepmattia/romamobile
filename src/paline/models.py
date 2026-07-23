@@ -49,14 +49,13 @@ import random
 from time import sleep 
 import csv
 import traceback
-import base64
 from paline.geomath import gbfe_to_wgs84
 from mercury.models import Mercury
 from gis.models import Polilinea
 from pprint import pprint
 import zlib
 from functools import cmp_to_key
-from servizi.py3compat import text_type, cmp
+from servizi.py3compat import text_type, cmp, b64encode_text, b64decode_bytes, pickle_loads_py2compat
 
 INTERVALLO_IN_ARRIVO = 90 # secondi
 
@@ -825,10 +824,12 @@ class ReteDinamicaSerializzata(models.Model):
 	_rete = models.TextField(db_column='rete')
 
 	def set_rete(self, data):
-		self._rete = base64.encodestring(zlib.compress(pickle.dumps(data)))
+		# base64.encodestring e' rimossa in Python 3.9: b64encode_text la
+		# sostituisce e restituisce testo (non bytes) per la colonna.
+		self._rete = b64encode_text(zlib.compress(pickle.dumps(data)))
 
 	def get_rete(self):
-		return pickle.loads(zlib.decompress(base64.decodestring(self._rete)))
+		return pickle_loads_py2compat(zlib.decompress(b64decode_bytes(self._rete)))
 
 	rete = property(get_rete, set_rete)
 
