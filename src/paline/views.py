@@ -40,7 +40,7 @@ from django.core import serializers
 from xml.dom import minidom
 from django.utils.translation import ugettext_lazy as _
 from django.utils import translation
-from django.utils.encoding import force_unicode
+from django.utils.encoding import force_text as force_unicode
 from itertools import chain
 from django.utils.html import escape, conditional_escape
 from django.utils.safestring import mark_safe

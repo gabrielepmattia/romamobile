@@ -32,7 +32,7 @@ from django import forms
 from django.template.response import TemplateResponse
 from django.utils.translation import ugettext as _
 from django.utils.safestring import mark_safe
-from django.utils.encoding import force_unicode
+from django.utils.encoding import force_text as force_unicode
 from django.http import HttpResponse
 from percorso.views import visualizza_percorso
 from servizi import infopoint

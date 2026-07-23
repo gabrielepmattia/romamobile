@@ -25,7 +25,6 @@ from django.db.models import Q
 from django import forms
 from django.db.models import DateTimeField
 import time, datetime
-import exceptions
 import math
 from paline import geomath
 from .utils import datetime2time
@@ -154,7 +153,7 @@ class Crud(object):
 		if self._is_datetime(field):
 			try:
 				return datetime.datetime(*(time.strptime(text, '%d/%m/%Y %H:%M')[0:6]))
-			except exceptions.ValueError:
+			except ValueError:
 				return None
 		return text	
 	

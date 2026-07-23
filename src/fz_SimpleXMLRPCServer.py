@@ -112,7 +112,10 @@ try:
 	import SocketServer
 except ImportError:  # Python 3
 	import socketserver as SocketServer
-import BaseHTTPServer
+try:
+	import BaseHTTPServer
+except ImportError:  # Python 3
+	import http.server as BaseHTTPServer
 import sys
 import os
 import traceback

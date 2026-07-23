@@ -28,6 +28,7 @@ RUN apt-get -y install build-essential python3-dev p7zip-full libffi-dev git bin
 
 COPY ./src .
 COPY ./requirements.txt .
+COPY ./dep/patch_django_py3.py .
 
 # Copy javascript built app
 COPY --from=js-build-stage /build/output /js/output
@@ -38,6 +39,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Workaround for GeoDjango-GEOS bug
 # https://stackoverflow.com/a/18721622
 RUN sed -i "s/ver = geos_version().decode()/ver = geos_version().decode().split(' ')[0]/g" /usr/local/lib/python3.9/site-packages/django/contrib/gis/geos/libgeos.py
+
+# Patch Django 1.5 per Python 3 (html_parser.HTMLParseError e ModelBase.__classcell__)
+RUN python patch_django_py3.py
 
 
 # Extra temporary dependencies, to be moved to pyproject.toml

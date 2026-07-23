@@ -27,7 +27,7 @@ from django.db.models import Max, Min, Q
 from django.contrib.auth.models import User, Group
 from django import forms
 from django.utils.safestring import mark_safe
-from django.utils.encoding import force_unicode
+from django.utils.encoding import force_text as force_unicode
 from django.utils.html import escape, conditional_escape
 from itertools import chain
 from django.utils.translation import ugettext_lazy as _
@@ -62,7 +62,7 @@ from .py3compat import with_metaclass
 from zlib import compress, decompress
 from django.db import models
 from django import db
-from django.utils.encoding import force_unicode
+from django.utils.encoding import force_text as force_unicode
 from django.contrib.contenttypes import models as contenttypes
 import email.utils as eut
 import traceback

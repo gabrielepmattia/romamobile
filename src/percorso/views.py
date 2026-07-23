@@ -42,8 +42,8 @@ from django.contrib.gis.geos import Point
 from django.template.response import TemplateResponse
 from django.utils.translation import ugettext_lazy as _
 from django.utils.safestring import mark_safe
-from django.utils.encoding import force_unicode
-from django.utils.safestring import SafeString, SafeUnicode
+from django.utils.encoding import force_text as force_unicode
+from django.utils.safestring import SafeString, SafeText as SafeUnicode
 from django.utils import translation
 from django.http import HttpResponse
 from django.core.cache import cache
@@ -745,7 +745,10 @@ class PercorsoBaseForm(forms.Form):
 	)
 	gs = giorni_settimana(capital=True)
 	wd = forms.TypedChoiceField(
-		choices=[(i, gs[i]) for i in range(7)],
+		# list(enumerate(...)) e non una comprehension: su Python 3 la
+		# comprehension ha scope proprio e non vede `gs` (variabile di classe),
+		# mentre questa e' un'espressione diretta. Identica a [(i, gs[i]) for i in range(7)].
+		choices=list(enumerate(gs[:7])),
 	)
 	hour = forms.TypedChoiceField(choices=[(i, "%02d" % i) for i in range(24)])
 	minute = forms.TypedChoiceField(choices=[(i, "%02d" % i) for i in range(0, 60, 10)])
@@ -775,7 +778,10 @@ class OpzioniAvanzateForm(forms.Form):
 	)
 	gs = giorni_settimana(capital=True)
 	av_wd = forms.TypedChoiceField(
-		choices=[(i, gs[i]) for i in range(7)],
+		# list(enumerate(...)) e non una comprehension: su Python 3 la
+		# comprehension ha scope proprio e non vede `gs` (variabile di classe),
+		# mentre questa e' un'espressione diretta. Identica a [(i, gs[i]) for i in range(7)].
+		choices=list(enumerate(gs[:7])),
 	)
 	av_hour = forms.TypedChoiceField(choices=[(i, "%02d" % i) for i in range(24)])
 	av_minute = forms.TypedChoiceField(choices=[(i, "%02d" % i) for i in range(0, 60, 10)])
