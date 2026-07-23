@@ -1062,6 +1062,23 @@ live, così il flip finale irreversibile resta il più piccolo possibile.
     `b64encode` che torna `bytes`, `force_unicode`): è correttezza da validare *al
     flip* caricando/salvando davvero i campi su Py3, non parte di questo batch.
 
+### Validazione deploy 2026-07-23 (`hetzner-4gb-1`, pre-batch 14-16)
+
+I tre pre-batch (ancora su Py2) deployati insieme in un solo rebuild — restano commit
+isolati per la reversibilità, ma il rischio è basso e la validazione li copre tutti.
+
+- Rebuild `romamobile:test` → `check_imports` contro la nuova immagine: **199 moduli,
+  0 falliti**. La rimozione delle quattro dipendenze non trascina via nulla di
+  transitivo (il gate della lezione `cgpolyencode`). Immagine 4.1.5 precedente
+  conservata come `romamobile:rollback-prebatch-20260723`.
+- Recreate `giano`+`web`; `giano` pronto in ~95 s, `RestartCount=0`, `rpyc (4,1,5)` +
+  `pyshp 2.1.3` in servizio, tronco Metro B/B1 costruito, nessun `Traceback`.
+- `./scripts/run_tests.sh` verde: smoke 14/14 a 200, **contratto RPC INVARIATO**
+  (i pre-batch non toccano il contratto, come atteso).
+- **Batch 15 provato dal vero** (non solo in laboratorio): `geomath.zipped_shapefile`
+  nel container di produzione genera uno zip di 852 byte con tutti e quattro i pezzi
+  (`.shp/.shx/.dbf/.prj`) su pyshp 2.1.3. La migrazione dell'API Writer regge end-to-end.
+
 **Nota operativa (da tenere nel runbook di deploy):** quando un batch tocca un
 `.pyx`, `pyximport` invalida la cache in `~/.pyxbld` e **ricompila a runtime** al
 riavvio di `giano`. Per ~30 s dopo il restart tutti gli endpoint che passano dall'RPC
