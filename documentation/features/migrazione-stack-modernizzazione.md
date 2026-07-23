@@ -916,9 +916,56 @@ test manuali) è a carico dell'ambiente di deploy dopo ogni batch.
        `python scripts/check_rpc_contract.py --compare <dump>` →
        atteso **CONTRATTO INVARIATO**. Poi `./scripts/run_tests.sh` verde, smoke
        test tutto 200, `giano` `RestartCount=0`.
-  - **Validazione in deploy: ancora da fare** sull'host. Le prove sopra sono in
-    container isolati sul target reale (Py2.7 + rpyc 4.1.5); l'esecuzione contro lo
-    stack vivo con `giano` è a carico dell'ambiente di deploy, come per ogni batch.
+  - **Validato in deploy** (`hetzner-4gb-1`, 2026-07-23): vedi sotto. Il contratto
+    RPC risulta **INVARIATO** fra `rpyc [3,3,0]` e `(4,1,5)` sullo stack vivo.
+
+### Validazione deploy 2026-07-23 (`hetzner-4gb-1`)
+
+- **Il salto è andato liscio, ed è il primo che valida il test costruito apposta
+  in Fase 0.** Sequenza esatta:
+  1. **Dump PRIMA** sullo stack pristino ancora a `06df1c8` (`giano`+`web` su
+     `rpyc (3,3,0)`, `RestartCount=0`): `./scripts/run_tests.sh rpc-dump` →
+     5 chiamate ok, impronta scritta in `/tmp/romamobile-tests/`.
+  2. `git merge --ff-only origin/master` → `6deaf4f`. `requirements.txt` cambia,
+     quindi **rebuild**: `docker build -t romamobile:test .` (`rpyc 4.1.5` +
+     `plumbum 1.7.2` installati puliti su Py2.7).
+  3. Gate del batch 6: `IMAGE=romamobile:test ./scripts/run_tests.sh imports`
+     **contro la nuova immagine** → **199 moduli, 0 falliti** (identico alla
+     baseline del batch 12).
+  4. `romamobile:latest` (il 3.3.0) conservato come
+     `romamobile:rollback-rpyc-20260723`; `test` promosso a `latest`;
+     `docker compose -f docker-compose.yml -f ../../docker-compose.yml up -d
+     --force-recreate giano web`.
+- **Avvio di `giano`:** ~135 s prima di `Aggiornamento arrivi completato!!`. La
+  finestra è il caricamento della rete più la ricompilazione `pyximport` dei
+  `.pyx` (cache `.pyxbld` vuota nel container ricreato, non perché il batch li
+  tocchi: non li tocca). Nel log l'avvio pulito atteso — `Tronco comune MEBCom1:
+  RM597 + RM625 -> MEBCom11` e `-> MEBCom12`, `Server listening`, feed in ciclo,
+  **zero `KeyError`/`Traceback`**. `RestartCount=0` stabile su entrambi.
+- **`rpyc (4,1,5)`** confermato in servizio dentro `giano` **e** `web`.
+- **Contratto RPC — la prova che questo batch esisteva per fare:**
+  `./scripts/run_tests.sh` verde su tutti e tre i controlli, con `rpc-compare`
+  che confronta il client/server 4.1.5 contro il dump 3.3.0:
+
+  ```
+  == contratto RPC web <-> giano
+  riferimento: python 2, rpyc [3, 3, 0]
+    coordinate_palina      identico
+    percorso_fermate_ap    identico
+    route_stats            identico
+    tempi_attesa_ap        identico
+    veicoli_percorso_ap    identico
+  ESITO: CONTRATTO INVARIATO
+  ```
+
+  L'impronta è sui **tipi** di ogni valore di ritorno: nessun `unicode` è
+  diventato `bytes`, nessuna chiave è cambiata. Il rischio nominale del salto —
+  un tipo che scivola in silenzio perché il payload è pickle — misurato **nullo**.
+- **Smoke test** (interno, `web:8000`): 14/14 a 200, incluso *calcolo percorso*
+  (routing via RPC, 13341 b) e *dettaglio palina* (RPC, 10261 b) — dimensioni in
+  linea con lo stack vivo, quindi le previsioni in tempo reale passano.
+- **Rollback pronto** in un comando: `docker tag romamobile:rollback-rpyc-20260723
+  romamobile:latest` e stesso `up --force-recreate giano web`.
 
 **Nota operativa (da tenere nel runbook di deploy):** quando un batch tocca un
 `.pyx`, `pyximport` invalida la cache in `~/.pyxbld` e **ricompila a runtime** al
