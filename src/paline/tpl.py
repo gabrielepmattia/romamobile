@@ -564,7 +564,10 @@ class RetePercorso(object):
 			nd = dist_rem - dist
 			v, w = self.fv.compute_speed(n, dist_rem, nd)
 			#print "SPEED: ", v, t.weight_tempo_percorrenza
-			if v >= 0 and w >= 0:
+			# v > 0, non v >= 0: velocita' nulla vuol dire tempo di percorrenza
+			# indefinito (dist / 0), e va trattata come "non disponibile" come il
+			# ramo v < 0 -- non fatta cadere in una divisione per zero.
+			if v > 0 and w >= 0:
 				t.tempo_percorrenza = dist / v
 				t.weight_tempo_percorrenza = w
 			else:
