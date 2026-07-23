@@ -1001,6 +1001,26 @@ live, così il flip finale irreversibile resta il più piccolo possibile.
     contro l'immagine ricostruita, non a vista). Ancora su Py2: nessun cambio di
     comportamento, solo meno dipendenze.
 
+- **Fase 1 · batch 15 — `pyshp` 1.1.4 → 2.1.3.** La 2.x è l'unica con wheel su Py3, ma
+  cambia l'API del `Writer`; la **2.1.3** è l'ultima serie che regge ancora Python 2.7
+  **ed** è pura-Python, quindi gira anche su Py3.10 — così il flip finale non deve
+  ritoccarla. È usata per l'export shapefile dei percorsi (`geomath.zipped_shapefile`,
+  chiamata da `tpl.py`).
+  - **Cosa cambia nell'API, misurato non supposto:** nella 1.x il `Writer` bufferizza
+    in memoria e scrive tutto in `save(path)`; nella 2.x scrive **in modo incrementale**
+    e vuole il nome del file già alla costruzione (`Writer(base_path, shapeType=...)`),
+    e `save()` sparisce a favore di `close()`. Perciò `zipped_shapefile` è stato
+    ristrutturato: la directory temporanea si crea *prima* del `Writer`, non dopo il
+    blocco. Inoltre `line(parts=[x])` → `line([x])` (il kwarg `parts=` non esiste più):
+    due punti in `tpl.py`. `point`, `field`, `record(**kw)` e il `Reader` di
+    `shapereader.py` sono invariati fra le due serie.
+  - **Verifica su entrambe le versioni** (`scripts`-style, container usa-e-getta): il
+    pattern migrato — `Writer` come context manager, `line([line])`, `record` keyword,
+    `point`, e il round-trip con `Reader` (`shapeRecords`, `fields` con `DeletionFlag`
+    in testa, `record[i-1]` posizionale, `shape.points`) — dà lo **stesso risultato**
+    su Py2.7+pyshp 2.1.3 e Py3.10+pyshp 2.1.3. Both-compatible: deployabile sul live
+    Py2, validazione end-to-end sull'endpoint di export.
+
 **Nota operativa (da tenere nel runbook di deploy):** quando un batch tocca un
 `.pyx`, `pyximport` invalida la cache in `~/.pyxbld` e **ricompila a runtime** al
 riavvio di `giano`. Per ~30 s dopo il restart tutti gli endpoint che passano dall'RPC
