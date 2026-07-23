@@ -252,14 +252,16 @@ def zipped_shapefile(type, path, base_name, gbfe=False):
 	Usage example:
 	with zipped_shapefile(shapefile.LINE, './roads') as shp:
 		shp.field('ID', 'C', '10')
-		shp.line(parts=[[[41, 12], [42, 13]],])
+		shp.line([[[41, 12], [42, 13]]])
 		shp.record(ID=1)
 	"""
-	shp = shapefile.Writer(type)
-	yield shp
+	# pyshp 2.x scrive in modo incrementale e vuole il nome del file gia' alla
+	# costruzione del Writer (la 1.x bufferizzava e scriveva tutto in .save()):
+	# quindi la directory temporanea va creata *prima*, non dopo il blocco.
 	with make_temp_directory() as tmpdir:
 		base_path = os.path.join(tmpdir, base_name)
-		shp.save(base_path)
+		with shapefile.Writer(base_path, shapeType=type) as shp:
+			yield shp
 		generate_prj_file(base_path, gbfe)
 		zipfile = shutil.make_archive(base_name, 'zip', tmpdir)
 		shutil.move(zipfile, os.path.join(path, base_name + ".zip"))

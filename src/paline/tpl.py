@@ -809,7 +809,7 @@ class RetePercorso(object):
 							else:
 								ptw = gbfe_to_wgs84(*pt)
 							line.append(ptw)
-						shp_p.line(parts=[line])
+						shp_p.line([line])
 						shp_p.record(
 							ID_LINEA=self.id_linea,
 							ID_PERC=self.id_percorso,
@@ -3891,7 +3891,7 @@ def grafo2shape(g, path, filename):
 					print(eid, line)
 				else:
 					desc = e.get_nome().encode('iso-8859-1')
-				shp_p.line(parts=[line])
+				shp_p.line([line])
 				shp_p.record(
 					EID=str(e.id),
 					ID_S=str(e.s.id),
