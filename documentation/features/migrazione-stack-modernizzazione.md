@@ -1104,6 +1104,19 @@ isolati per la reversibilità, ma il rischio è basso e la validazione li copre 
   - `src`-only (nessun `requirements`): deploy = `git pull` + restart di `giano`
     (`pyximport` ricompila il `.pyx`). Validazione sul live: il test di caratterizzazione
     del routing, impronta identica prima/dopo.
+  - **Validato in deploy** (`hetzner-4gb-1`, 2026-07-23): `giano` ricompila `grafo.pyx`
+    col nuovo sorgente (solo il warning C `-Wmaybe-uninitialized` noto dal batch 7,
+    nessun errore Cython), `RestartCount=0`, suite verde (199 moduli, smoke 14/14,
+    **contratto INVARIATO**). Il test di routing dà lo stesso **itinerario** (Colosseo →
+    Metro B → Termini): non è byte-identico solo perché la pagina include un commento
+    `<!--Tempo di calcolo...-->` che varia a ogni richiesta — verificato che due catture
+    sullo stesso grafo differiscono già di quello, non del percorso.
+  - **Trovato per strada, preesistente, non toccato:** al primo caricamento del feed è
+    comparso un `ZeroDivisionError` in `tpl.py:568` (`calcola_percorrenze`,
+    `tempo_percorrenza = dist / v` con `v == 0`, cioè una velocità nulla nei dati
+    realtime). È in codice non toccato da questo batch, non ricorre dopo l'avvio, e
+    l'aggiornamento arrivi torna a completare. Un guasto latente data-dipendente, da
+    guardare a parte (una guardia su `v == 0`), non parte del flip.
 
 **Nota operativa (da tenere nel runbook di deploy):** quando un batch tocca un
 `.pyx`, `pyximport` invalida la cache in `~/.pyxbld` e **ricompila a runtime** al
