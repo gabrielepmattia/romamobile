@@ -74,7 +74,7 @@ progetto e va trattato come progetto indipendente dal backend.
 | `cGPolyEncode==0.1.1` (nessuna release Py3) | `polyline` | ✅ batch 8 |
 | `Cython==0.23.4` | Cython moderno | ✅ batch 7 |
 | `pyproj==1.9.5.1` | `pyproj` 2.2.2 (ultima con Py2) | ✅ batch 9 |
-| `rpyc==3.3.0` | RPyC attuale |
+| `rpyc==3.3.0` | `rpyc` 4.1.5 (ultima con Py2) | ✅ batch 13 |
 | `django-json-rpc`, `django-constance` | versioni correnti | Fase 2 |
 | `protobuf` / `gtfs-realtime-bindings` | ultime con Py2 | ✅ batch 11 |
 | `Django==1.5.12` | Django LTS | Fase 2 |
@@ -84,7 +84,7 @@ progetto e va trattato come progetto indipendente dal backend.
 | Pacchetto | Nota |
 |---|---|
 | ~~`pyproj==1.9.5.1`~~ | ✅ batch 9. Il timore sull'API era mal riposto: cambia `pyproj.transform()`, che `geomath` non chiama mai. Il rischio vero era sotto, PROJ 4 → PROJ 6; misurato nullo. |
-| `rpyc==3.3.0` | La 4.x supporta Py3 ma cambia il protocollo: `web` e `giano` vanno aggiornati **insieme**, non uno alla volta. Unico punto della migrazione che non è incrementale. |
+| ~~`rpyc==3.3.0`~~ | ✅ batch 13, → 4.1.5 (ultima con Py2; la 5.0 la droppa). Il protocollo **cambia** davvero, ed è per questo che `web` e `giano` si aggiornano insieme: resta l'unico passo non incrementale. Ma il payload viaggia come byte picklati **passati per valore**, non sulla serializzazione di RPyC — forma e tipi identici, misurati su Py2.7+4.1.5. Nessun servizio ha `on_connect`/`__init__(conn)`, quindi il cambio di istanziazione dei servizi 3→4 non ci tocca. L'unico default cambiato di nascosto (`sync_request_timeout`: assente → 30 s) è rifissato a `None`. |
 | ~~`gtfs-realtime-bindings==0.0.6`~~ | ✅ batch 11, insieme a `protobuf`. Attenzione: non era neutro — le 0.0.7 riconoscono `occupancy_status = 7` che le 0.0.6 scartavano. |
 | `django-json-rpc`, `django-constance`, `django-simple-captcha`, `django-redis` | Versioni vincolate a Django: si muovono in Fase 2. Nota: `django-simple-captcha 0.5.1` dichiara già `Django>=1.7`, e pip lo segnala a ogni build. |
 | `Pillow==2.3.0`, `lxml==3.3.3`, `requests==2.9.1`, `redis==2.10.5`, `pytz==2015.7` | Nessun ostacolo noto: hanno tutte versioni Py3. Aggiornabili quando serve. |
@@ -190,8 +190,8 @@ sull'host di deploy.
 `future`), così da poter migrare a piccoli passi restando sempre rilasciabili su Py2.
 
 - [x] Sostituire le dipendenze morte con equivalenti Py3-compatibili (tabella
-      sopra). Fatte tutte quelle muovibili una alla volta; resta `rpyc`, che non
-      è incrementale.
+      sopra). Fatte tutte, `rpyc` incluso (batch 13): era l'unica non
+      incrementale, e va deployata con `web` e `giano` insieme.
 - [ ] Automatizzare le trasformazioni meccaniche (`futurize`/`2to3` mirati):
   - [x] `print` statement → `print()` funzione + `from __future__ import print_function`
         (40 file backend; frontend `percorso/js/` escluso, è Fase 3).
@@ -857,6 +857,68 @@ test manuali) è a carico dell'ambiente di deploy dopo ogni batch.
   basic-auth condiviso di Traefik ma dietro un portale Authelia dedicato, per
   poter dare accesso al sito a una persona senza darle anche gli altri servizi
   dell'host. Vedi [Accesso e autenticazione](accesso-e-autenticazione.md).
+
+### 2026-07-23
+
+- **Fase 1 · batch 13 — `rpyc` 3.3.0 → 4.1.5.** L'ultima release che gira ancora
+  su Python 2.7 (la 5.0.0 lo droppa): come Cython (batch 7) e pyproj (batch 9),
+  si aggiorna la libreria *prima* dell'interprete. È il passo che la roadmap
+  segnava da sempre come **l'unico non incrementale** — il protocollo di RPyC
+  cambia fra 3.3 e 4.x, quindi `web` e `giano` vanno deployati **insieme**, senza
+  poter tornare indietro un pezzo alla volta. Fase 0 aveva costruito
+  `scripts/check_rpc_contract.py` esattamente per questo salto.
+  - **Perché il salto è risultato quasi vuoto di codice.** Il payload fra `web` e
+    `giano` non cavalca la serializzazione di RPyC: è **byte picklati passati per
+    valore** (`pickle.loads(getattr(c.root, m)(pickle.dumps(param, 2)))`). Una
+    stringa di byte attraversa il canale identica su 3.3 e su 4.1.5, e proprio i
+    **tipi** — `unicode` vs `str` (poi `str` vs `bytes` su Py3) — sono ciò che il
+    test di contratto sorveglia. Misurato in container Py2.7+4.1.5: round-trip
+    con `unicode`/`str`/`None` **intatti**.
+  - **E perché il resto della superficie non si è rotto.** Nessun servizio
+    (`MercuryListener`, `MercuryProxy`, `Trovalinea`) definisce `on_connect`,
+    `on_disconnect` o `__init__(self, conn)`, né usa `self._conn`: il cambiamento
+    3→4 nel modo in cui i servizi vengono istanziati e connessi non ci tocca. Il
+    resto del pattern è invariato fra le due serie e l'ho verificato *misurandolo*
+    invece di fidarmi: `ThreadedServer(classe, port=0, protocol_config=config)`
+    con la porta auto-assegnata rileggibile subito da `.port`; `rpyc.connect(host,
+    port, config=config)`; l'attributo arbitrario `c.peer = s` sulla connessione;
+    `getattr(c.root, metodo)(...)`; `c.root.ping()` e `c.close()` del watchdog.
+  - **L'unica riga di sorgente cambiata, e perché.** RPyC 3.3 **non aveva**
+    `sync_request_timeout` nel `DEFAULT_CONFIG`: una chiamata sincrona a `giano`
+    attendeva senza limite. La 4.x lo introduce con default **30 s**. Il nostro
+    `config` non fissava quella chiave, quindi avremmo ereditato il nuovo default
+    in silenzio, e una chiamata lenta mai vista scadere prima sarebbe diventata un
+    `TimeoutError`. Rifissato a `None` in `mercury/models.py`: il batch aggiorna la
+    libreria **senza cambiare il comportamento**. Misurato che regge il carico
+    della prova: con un timeout finito la sync *scade* anche sul nostro pattern
+    pickle-over-bytes, con `None` completa. Se un domani un timeout finito servisse
+    davvero, è una decisione a parte — annotata nel commento del codice.
+  - **Superfici morte confermate innocue, non toccate:**
+    - `run_mercury_proxy` (il proxy che restituisce un client Mercury come netref)
+      **non è avviato**: docker-compose lancia solo `web` e `giano`
+      (`runtrovalinea_new cpd tr in_docker`). Il path netref vive solo nell'esempio
+      in docstring; quello reale è la connessione persistente diretta di
+      `get_web_cl_mercury()`.
+    - `calcola_frequenze.py` e `attivacpd.py` fanno solo `from rpyc.utils.server
+      import ThreadedServer` senza mai istanziarlo — import morto, e su 4.x il path
+      d'import è identico.
+  - **Trovato per strada, non corretto:** `paline/views.py:1104` ha un
+    `# caricatore = rpyc.async(c.root.carica_rete)` commentato. `async` è parola
+    chiave da Py3.7: quella riga, se riesumata, sarebbe un `SyntaxError` su Py3 (in
+    4.x il nome è `rpyc.async_`). È dentro il blocco `carica_rete` tutto commentato,
+    quindi oggi non gira: è un mina per la Fase 2/3, non per questo batch.
+  - **Deploy — richiede il rebuild dell'immagine** (`requirements.txt` cambia): vale
+    il gate del batch 6. La validazione è quella per cui Fase 0 esisteva:
+    1. **Prima**, nel container `web` ancora su 3.3.0:
+       `./scripts/run_tests.sh rpc-dump` (fotografa il contratto su `/tmp/...`).
+    2. Ricostruire l'immagine, `check_imports` **contro la nuova immagine**.
+    3. **Dopo**, con `web`+`giano` su 4.1.5:
+       `python scripts/check_rpc_contract.py --compare <dump>` →
+       atteso **CONTRATTO INVARIATO**. Poi `./scripts/run_tests.sh` verde, smoke
+       test tutto 200, `giano` `RestartCount=0`.
+  - **Validazione in deploy: ancora da fare** sull'host. Le prove sopra sono in
+    container isolati sul target reale (Py2.7 + rpyc 4.1.5); l'esecuzione contro lo
+    stack vivo con `giano` è a carico dell'ambiente di deploy, come per ogni batch.
 
 **Nota operativa (da tenere nel runbook di deploy):** quando un batch tocca un
 `.pyx`, `pyximport` invalida la cache in `~/.pyxbld` e **ricompila a runtime** al
